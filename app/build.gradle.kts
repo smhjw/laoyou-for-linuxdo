@@ -88,4 +88,6 @@ dependencies {
     // WebView 代理导流:ProxyController 只存在于该库,framework 的 WebView 没有公开代理 API。
     // zero-doh-local-proxy-tunnel 方案的 WebView 侧接入(task 3.1)强依赖它。
     implementation("androidx.webkit:webkit:1.12.1")
+
+    testImplementation("junit:junit:4.13.2")
 }

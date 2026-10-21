@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         intent?.data?.toString()?.let { uri ->
-            viewModel.handleWebAuthCallback(uri)
+            viewModel.auth.handleWebAuthCallback(uri)
         }
         handleNotificationIntent(intent)
         val browser = (application as App).container.browser
@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
                 org.linuxdo.android.service.NotificationHelper.promptIgnoreBatteryOptimizationsIfNeeded(this)
             }
         }
-        viewModel.refreshUnread(force = true)
+        viewModel.notifications.refreshUnread(force = true)
     }
 
     override fun onStop() {
@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         intent.data?.toString()?.let { uri ->
-            viewModel.handleWebAuthCallback(uri)
+            viewModel.auth.handleWebAuthCallback(uri)
         }
         handleNotificationIntent(intent)
     }
@@ -85,9 +85,9 @@ class MainActivity : ComponentActivity() {
         intent.removeExtra("post_number")
 
         if (topicId > 0L) {
-            viewModel.navigateToTopicFromNotification(topicId, postNumber, notificationId, notificationType)
+            viewModel.notifications.navigateToTopicFromNotification(topicId, postNumber, notificationId, notificationType)
         } else if (notificationId != null) {
-            viewModel.readNotification(notificationId, notificationType)
+            viewModel.notifications.readNotification(notificationId, notificationType)
         }
     }
 }
