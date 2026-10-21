@@ -52,11 +52,23 @@ import org.linuxdo.android.ui.design.ListRow
 import androidx.compose.ui.text.font.FontWeight
 import android.widget.Toast
 import org.linuxdo.android.ui.*
-import org.linuxdo.android.ui.screen.settings.SettingIconBadge
-import org.linuxdo.android.ui.screen.settings.SettingInfoIcon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Science
+import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.Troubleshoot
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import org.linuxdo.android.ui.screen.settings.SettingsGroup
+import org.linuxdo.android.ui.screen.settings.SettingsItem
+import org.linuxdo.android.ui.screen.settings.SettingsRadioItem
+import org.linuxdo.android.ui.screen.settings.SettingsSwitchItem
 
 /**
- * 开发者选项。承接原型界面的全部调试能力:双路径切换、自动刷新、会话诊断与日志。
+ * 开发者选项:网络路径切换、会话诊断与运行日志。
+ *
  * 这些是排查 Cloudflare 与会话保持问题的主要手段,所以界面改版时只换位置、不削功能。
  */
 @Composable
@@ -64,136 +76,75 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
     val context = LocalContext.current
     val stats by viewModel.diagnostics.stats.collectAsStateWithLifecycle()
     val lines by viewModel.diagnostics.lines.collectAsStateWithLifecycle()
-    val savedAt = if (state.cookieSavedAt == 0L) {
-        "-"
-    } else {
-        DateFormat.getDateTimeInstance().format(Date(state.cookieSavedAt))
-    }
+    val savedAt = if (state.cookieSavedAt == 0L) "-" else DateFormat.getDateTimeInstance().format(Date(state.cookieSavedAt))
     var zeroDohPocReport by remember { mutableStateOf<String?>(null) }
-    var zeroDohPocRunning by remember { mutableStateOf(false) }
-    val zeroDohPocScope = androidx.compose.runtime.rememberCoroutineScope()
 
     AppScaffold(title = "开发者选项", onBack = onBack) {
         item(key = "paths") {
-            SectionTitle("网络路径")
-            SectionCard {
-                NetworkPath.entries.forEachIndexed { index, path ->
-                    ListRow(onClick = { viewModel.setPath(path) }) {
-                        Text(
-                            text = path.label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f),
-                        )
-                        if (state.path == path) {
-                            Text("使用中", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                    if (index < NetworkPath.entries.lastIndex) ListDivider()
+            SettingsGroup(title = "网络路径") {
+                NetworkPath.entries.forEach { path ->
+                    SettingsRadioItem(title = path.label, selected = state.path == path, onClick = { viewModel.setPath(path) })
                 }
             }
         }
 
         item(key = "zero-doh-lab") {
-            SectionTitle("网络直连实验")
-            SectionCard {
-                ListRow(onClick = {
-                    if (zeroDohPocRunning) {
-                        Toast.makeText(context, "正在验证中，请稍候…", Toast.LENGTH_SHORT).show()
-                    } else {
-                        zeroDohPocRunning = true
-                        zeroDohPocScope.launch {
-                            zeroDohPocReport = "未集成实验模块"
-                            zeroDohPocRunning = false
-                        }
-                    }
-                }) {
-                    SettingIconBadge(bgColor = Color(0xFFE8F5E9)) {
-                        SettingInfoIcon(tint = Color(0xFF43A047))
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("零 DoH 直连可行性验证", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "验证 Anycast 零 DNS 直连、ECH 存活性、WebView 代理导流与 ClientHello 分片",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
-                    }
-                    Text(
-                        if (zeroDohPocRunning) "验证中…" else "开始验证 ›",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
+            SettingsGroup(title = "网络直连实验") {
+                SettingsItem(
+                    title = "零 DoH 直连可行性验证",
+                    icon = Icons.Outlined.Science,
+                    summary = "验证 Anycast 零 DNS 直连、ECH 存活性、WebView 代理导流与 ClientHello 分片",
+                    onClick = { zeroDohPocReport = "未集成实验模块" },
+                )
             }
         }
 
         item(key = "actions") {
-            SectionTitle("操作")
-            SectionCard {
-                ListRow {
-                    Text(
-                        text = "自动刷新(${Config.AUTO_REFRESH_INTERVAL_MS / 60_000} 分钟)",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Switch(
-                        checked = state.autoRefresh,
-                        onCheckedChange = { viewModel.toggleAutoRefresh() },
-                        colors = SwitchDefaults.colors(
-                            // iOS 的开关轨道是 systemGreen。
-                            checkedTrackColor = AppTheme.colors.success,
-                            checkedThumbColor = Color.White,
-                        ),
-                    )
-                }
-                ListDivider()
-                ListRow(onClick = viewModel::retryLatest) {
-                    Text("立即刷新列表", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
-                }
-                ListDivider()
-                ListRow(onClick = {
-                    NotificationHelper.recordDiagnosticSnapshot(context)
-                    Toast.makeText(context, "推送与角标状态已记录到下方日志", Toast.LENGTH_SHORT).show()
-                }) {
-                    Text("记录推送与角标状态", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
-                }
-                ListDivider()
-                ListRow(onClick = {
-                    val latestLines = viewModel.diagnostics.readLatestLines(300)
-                    context.getSystemService(android.content.ClipboardManager::class.java)
-                        ?.setPrimaryClip(android.content.ClipData.newPlainText("LinuxDo 诊断日志", latestLines.joinToString("\n")))
-                    Toast.makeText(context, "已复制最新${latestLines.size}行日志", Toast.LENGTH_SHORT).show()
-                }) {
-                    Text("复制当前日志", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
-                }
-                ListDivider()
-                ListRow(onClick = viewModel::logout) {
-                    Text("登出并清除 Cookie", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
-                }
+            SettingsGroup(title = "操作") {
+                SettingsSwitchItem(
+                    title = "自动刷新（${Config.AUTO_REFRESH_INTERVAL_MS / 60_000} 分钟）",
+                    icon = Icons.Outlined.Sync,
+                    checked = state.autoRefresh,
+                    onCheckedChange = { viewModel.toggleAutoRefresh() },
+                )
+                SettingsItem(title = "立即刷新列表", icon = Icons.Outlined.Refresh, onClick = viewModel::retryLatest)
+                SettingsItem(
+                    title = "记录推送与角标状态",
+                    icon = Icons.Outlined.Troubleshoot,
+                    onClick = {
+                        NotificationHelper.recordDiagnosticSnapshot(context)
+                        Toast.makeText(context, "推送与角标状态已记录到下方日志", Toast.LENGTH_SHORT).show()
+                    },
+                )
+                SettingsItem(
+                    title = "复制当前日志",
+                    icon = Icons.Outlined.ContentCopy,
+                    onClick = {
+                        val latestLines = viewModel.diagnostics.readLatestLines(300)
+                        context.getSystemService(android.content.ClipboardManager::class.java)
+                            ?.setPrimaryClip(android.content.ClipData.newPlainText("LinuxDo 诊断日志", latestLines.joinToString("\n")))
+                        Toast.makeText(context, "已复制最新${latestLines.size}行日志", Toast.LENGTH_SHORT).show()
+                    },
+                )
+                SettingsItem(
+                    title = "登出并清除 Cookie",
+                    icon = Icons.Outlined.DeleteForever,
+                    titleColor = MaterialTheme.colorScheme.error,
+                    iconTint = MaterialTheme.colorScheme.error,
+                    onClick = viewModel::logout,
+                )
             }
         }
 
         item(key = "session") {
-            SectionTitle("会话诊断")
-            SectionCard {
+            SettingsGroup(title = "会话诊断") {
                 InfoRow("当前用户", state.username ?: "未确认")
-                ListDivider()
                 InfoRow("最近路径", stats.lastPath)
-                ListDivider()
                 InfoRow("最近状态码", stats.lastStatus?.toString() ?: "-")
-                ListDivider()
                 InfoRow("静默重验次数", stats.silentRevalidations.toString())
-                ListDivider()
                 InfoRow("需交互验证次数", stats.interactiveRequired.toString())
-                ListDivider()
                 InfoRow("Cookie", state.cookieNames.joinToString(", ").ifEmpty { "无" })
-                ListDivider()
                 InfoRow("Cookie 更新于", savedAt)
-                ListDivider()
                 InfoRow("User-Agent", state.userAgent)
             }
         }
@@ -203,52 +154,33 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
         items(lines.asReversed()) { line ->
             Text(
                 text = line,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 10.sp,
+                style = CodeTextStyle.copy(fontSize = 10.sp, lineHeight = 14.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Dimens.screenPadding, vertical = 2.dp),
+                    .padding(horizontal = Dimens.screenPadding + 16.dp, vertical = 2.dp),
             )
         }
         item(key = "log-tail") { Spacer(Modifier.height(32.dp)) }
     }
 
     zeroDohPocReport?.let { report ->
-        Dialog(onDismissRequest = { zeroDohPocReport = null }) {
-            Column(
-                modifier = Modifier
-                    .widthIn(min = 290.dp, max = 350.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text("零 DoH 可行性验证报告", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(
-                    "完整报告同时写入 logcat，可用 adb logcat -s ZeroDohPoc:I 取回",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    report,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier
-                        .heightIn(max = 420.dp)
-                        .verticalScroll(rememberScrollState()),
-                )
-                Text(
-                    "关闭",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .clickable { zeroDohPocReport = null }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-            }
-        }
+        AlertDialog(
+            onDismissRequest = { zeroDohPocReport = null },
+            title = { Text("零 DoH 可行性验证报告") },
+            text = {
+                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                    Text(
+                        "完整报告同时写入 logcat，可用 adb logcat -s ZeroDohPoc:I 取回",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(report, style = MaterialTheme.typography.bodyMedium)
+                }
+            },
+            confirmButton = { TextButton(onClick = { zeroDohPocReport = null }) { Text("关闭") } },
+        )
     }
 }
 
@@ -256,31 +188,13 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
 internal fun SectionTitle(text: String) {
     Text(
         text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(
-            start = Dimens.screenPadding + 16.dp,
-            end = Dimens.screenPadding,
-            top = 24.dp,
-            bottom = 6.dp,
-        ),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 24.dp, bottom = 8.dp),
     )
 }
 
 @Composable
 private fun InfoRow(label: String, value: String) {
-    ListRow {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-    }
+    SettingsItem(title = label, summary = value)
 }

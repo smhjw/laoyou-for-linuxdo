@@ -130,6 +130,50 @@ import org.linuxdo.android.ui.design.Dimens
 import org.linuxdo.android.ui.design.UserAvatar
 import org.linuxdo.android.ui.design.avatarShape
 import org.linuxdo.android.ui.format.RelativeTime
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TextButton
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 
 data class TopicListUiState(
     val items: List<TopicListItem> = emptyList(),
@@ -144,7 +188,6 @@ data class TopicListUiState(
     val highlightedTopicIds: Set<Long> = emptySet(),
 )
 
-/** "最新"与"某分类下的帖子"用同一个列表页,只是标题与数据源不同。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicListScreen(
@@ -190,20 +233,18 @@ fun TopicListScreen(
         currentCategoryId != null -> categoryListStates.getOrPut(currentCategoryId) { LazyListState() }
         else -> defaultListState
     }
-    val pullState = rememberPullToRefreshState()
     val scope = rememberCoroutineScope()
     val clipboardManager = LocalClipboardManager.current
-    var noticeToast by remember { mutableStateOf<String?>(null) }
-    var showSortDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showSortSheet by remember { mutableStateOf(false) }
     var flagTargetTopic by remember { mutableStateOf<Topic?>(null) }
     var flagSubmitting by remember { mutableStateOf(false) }
     var flagError by remember { mutableStateOf<String?>(null) }
 
     fun showNotice(message: String) {
-        noticeToast = message
         scope.launch {
-            delay(2500)
-            if (noticeToast == message) noticeToast = null
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(message)
         }
     }
 
@@ -227,6 +268,7 @@ fun TopicListScreen(
         if (!active || listState.isScrollInProgress || state.refreshing) revealedTopicId = null
     }
     val hasCategoryDropdown = categoryVariants.size > 1 && onSelectCategoryVariant != null
+    val isHome = currentFeed != null && onFeedSelect != null
 
     // 距底部还有 4 项时就开始取下一页,滚到底时数据通常已经就位。
     // 必须要求列表已有真实数据:空列表时占位项也会让 lastVisible 命中阈值,
@@ -246,203 +288,152 @@ fun TopicListScreen(
         if (nearEnd && canLoadMore) onLoadMore()
     }
 
-
     val (pinnedGroups, plainItems) = remember(state.items) { pinnedPrefixGroups(state.items) }
 
-    PullToRefreshBox(
-        isRefreshing = state.refreshing,
-        onRefresh = onRefresh,
-        state = pullState,
+    AppScaffold(
+        title = if (isHome) "LINUX DO" else title,
         modifier = modifier,
-        indicator = {
-            val fraction = pullState.distanceFraction
-            // 初始加载时列表中央已有加载指示，这里再叠一个下拉转圈就成了两个圈。
-            if (!state.initialLoading && (state.refreshing || fraction > 0f)) {
-                Box(
-                    Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = Dimens.navBarHeight + 10.dp)
-                        .graphicsLayer {
-                            alpha = if (state.refreshing) 1f else min(1f, fraction * 1.4f)
-                        },
+        listState = listState,
+        onBack = onBack,
+        showLargeTitle = onBack != null && !hasCategoryDropdown,
+        scrollToTopRequest = scrollToTopRequest,
+        trailing = { trailing() },
+        customTitle = if (hasCategoryDropdown) {
+            {
+                CategoryVariantSelector(
+                    title = title,
+                    variants = categoryVariants,
+                    currentCategoryId = currentCategoryId,
+                    onSelect = { onSelectCategoryVariant?.invoke(it) },
+                )
+            }
+        } else null,
+        topBarBottom = if (isHome) {
+            { FeedTabs(currentFeed = currentFeed!!, onFeedSelect = onFeedSelect!!) }
+        } else null,
+        contentPadding = PaddingValues(top = 4.dp, bottom = 96.dp),
+        refreshing = state.refreshing,
+        onRefresh = onRefresh,
+        // 初始加载时列表中央已有加载指示,这里再叠一个下拉转圈就成了两个圈。
+        showRefreshIndicator = !state.initialLoading,
+        floatingOverlay = {
+            AnimatedVisibility(
+                visible = state.incomingTopicIds.isNotEmpty(),
+                enter = fadeIn(tween(200)) + slideInVertically(tween(250)) { -it },
+                exit = fadeOut(tween(150)) + slideOutVertically(tween(200)) { -it },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp),
+            ) {
+                IncomingTopicsBanner(
+                    count = state.incomingTopicIds.size,
+                    onClick = {
+                        onApplyIncoming?.invoke()
+                        scope.launch { listState.animateScrollToItem(0) }
+                    },
+                )
+            }
+            // Snackbar 出现时把右下角按钮顶上去,不互相遮挡。
+            val fabLift by animateDpAsState(
+                targetValue = if (snackbarHostState.currentSnackbarData != null) 72.dp else 0.dp,
+                label = "fab-lift",
+            )
+            if (floatingBallEnabled && floatingBallActions.isNotEmpty()) {
+                FloatingAssistiveBall(
+                    actions = floatingBallActions,
+                    initialXRatio = floatingBallXRatio,
+                    initialYRatio = floatingBallYRatio,
+                    onPositionChange = onFloatingBallPositionChange,
+                    onActionClick = { action ->
+                        when (action) {
+                            FloatingAction.CreateTopic -> onCreateTopic?.invoke()
+                            FloatingAction.Sort -> showSortSheet = true
+                            FloatingAction.Drafts -> onNavigateToDrafts?.invoke()
+                            FloatingAction.Search -> onNavigateToSearch?.invoke()
+                            FloatingAction.Categories -> onNavigateToCategories?.invoke()
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 16.dp, bottom = 16.dp + fabLift),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    LoadingIndicator(diameter = 22.dp)
+                    TopicSortFab(sortOrder = sortOrder, onClick = { showSortSheet = true })
+                    if (onCreateTopic != null) CreateTopicFab(onClick = onCreateTopic)
                 }
             }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp),
+            )
         },
     ) {
-        AppScaffold(
-            title = title,
-            listState = listState,
-            onBack = onBack,
-            showLargeTitle = onBack != null && !hasCategoryDropdown,
-            scrollToTopRequest = scrollToTopRequest,
-            trailing = { trailing() },
-            customTitle = when {
-                currentFeed != null && onFeedSelect != null -> {
-                    {
-                        HomeFeedCollapsedBar(
-                            currentFeed = currentFeed,
-                            onFeedSelect = onFeedSelect,
-                        )
-                    }
-                }
-                hasCategoryDropdown -> {
-                    {
-                        CategoryVariantSelector(
-                            title = title,
-                            variants = categoryVariants,
-                            currentCategoryId = currentCategoryId,
-                            collapsed = true,
-                            onSelect = { onSelectCategoryVariant?.invoke(it) },
-                        )
-                    }
-                }
-                else -> null
-            },
-            floatingOverlay = {
-                AnimatedVisibility(
-                    visible = state.incomingTopicIds.isNotEmpty(),
-                    enter = fadeIn(tween(200)) + slideInVertically(tween(250)) { -it },
-                    exit = fadeOut(tween(150)) + slideOutVertically(tween(200)) { -it },
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 8.dp),
-                ) {
-                    IncomingTopicsBanner(
-                        count = state.incomingTopicIds.size,
-                        onClick = {
-                            onApplyIncoming?.invoke()
-                            scope.launch { listState.animateScrollToItem(0) }
-                        },
-                    )
-                }
-                if (floatingBallEnabled && floatingBallActions.isNotEmpty()) {
-                    FloatingAssistiveBall(
-                        actions = floatingBallActions,
-                        sortOrder = sortOrder,
-                        sortAscending = sortAscending,
-                        initialXRatio = floatingBallXRatio,
-                        initialYRatio = floatingBallYRatio,
-                        onPositionChange = onFloatingBallPositionChange,
-                        onActionClick = { action ->
-                            when (action) {
-                                FloatingAction.CreateTopic -> onCreateTopic?.invoke()
-                                FloatingAction.Sort -> showSortDialog = true
-                                FloatingAction.Drafts -> onNavigateToDrafts?.invoke()
-                                FloatingAction.Search -> onNavigateToSearch?.invoke()
-                                FloatingAction.Categories -> onNavigateToCategories?.invoke()
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(end = 14.dp, bottom = 18.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        TopicSortFab(
-                            sortOrder = sortOrder,
-                            ascending = sortAscending,
-                            onClick = { showSortDialog = true },
-                        )
-                        if (onCreateTopic != null) {
-                            CreateTopicFab(onClick = onCreateTopic)
-                        }
-                    }
-                }
-                if (showSortDialog) {
-                    TopicSortDialog(
-                        currentOrder = sortOrder,
-                        ascending = sortAscending,
-                        onDismiss = { showSortDialog = false },
-                        onSelectOrder = { order ->
-                            onSortChange(order)
-                            if (order == TopicSortOrder.Default || order != sortOrder) {
-                                showSortDialog = false
-                            }
-                        },
-                    )
-                }
-                noticeToast?.let { notice ->
-                    Text(
-                        notice,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppTheme.colors.success,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(horizontal = 16.dp, vertical = 22.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                            .border(1.dp, AppTheme.colors.success.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                    )
-                }
-            },
-        ) {
-            state.error?.let { message ->
-                item(key = "error") { ErrorNotice(message, onRefresh) }
-            }
-            if (state.initialLoading && state.items.isEmpty()) {
-                item(key = "loading") { LoadingBox() }
-            }
-            if (!state.initialLoading && state.items.isEmpty() && state.error == null) {
-                item(key = "empty") { EmptyNotice() }
-            }
-
-            val keyPrefix = currentFeed?.name ?: currentCategoryId ?: "topic"
-
-            itemsIndexed(
-                items = pinnedGroups,
-                key = { _, group -> "${keyPrefix}_pinned_${group.first().topic.id}" },
-            ) { _, group ->
-                Column {
-                    PinnedGroupCard(
-                        items = group,
-                        isHighlighted = group.any { it.topic.id in state.highlightedTopicIds },
-                        onOpenTopic = onOpenTopic,
-                        onSetNotificationLevel = onSetNotificationLevel,
-                        onCopyLink = copyTopicLink,
-                        onBookmark = bookmarkTopicAction,
-                        onFlag = flagTopicAction,
-                    )
-                    ListDivider(startIndent = Dimens.screenPadding)
-                }
-            }
-
-            itemsIndexed(
-                items = plainItems,
-                key = { _, item -> "${keyPrefix}_${item.topic.id}" },
-            ) { index, item ->
-                val isHighlighted = item.topic.id in state.highlightedTopicIds
-                Column {
-                    TopicRow(
-                        item = item,
-                        isHighlighted = isHighlighted,
-                        revealed = revealedTopicId == item.topic.id,
-                        onReveal = { opened -> revealedTopicId = item.topic.id.takeIf { opened } },
-                        onSetNotificationLevel = if (onSetNotificationLevel != null) { level ->
-                            onSetNotificationLevel(item.topic, level)
-                        } else null,
-                        onCopyLink = { copyTopicLink(item.topic) },
-                        onBookmark = bookmarkTopicAction?.let { fn -> { fn(item.topic) } },
-                        onFlag = flagTopicAction?.let { fn -> { fn(item.topic) } },
-                        onClick = { onOpenTopic(item.topic) },
-                    )
-                    if (index < plainItems.lastIndex) {
-                        ListDivider(startIndent = Dimens.screenPadding)
-                    }
-                }
-            }
-
-            if (state.loadingMore) {
-                item(key = "load-more") { LoadingBox() }
-            }
+        state.error?.let { message ->
+            item(key = "error") { ErrorNotice(message, onRefresh) }
         }
+        if (state.initialLoading && state.items.isEmpty()) {
+            item(key = "loading") { LoadingBox() }
+        }
+        if (!state.initialLoading && state.items.isEmpty() && state.error == null) {
+            item(key = "empty") { EmptyNotice() }
+        }
+
+        val keyPrefix = currentFeed?.name ?: currentCategoryId ?: "topic"
+
+        items(
+            items = pinnedGroups,
+            key = { group -> "${keyPrefix}_pinned_${group.first().topic.id}" },
+        ) { group ->
+            PinnedGroupCard(
+                items = group,
+                isHighlighted = group.any { it.topic.id in state.highlightedTopicIds },
+                onOpenTopic = onOpenTopic,
+                onSetNotificationLevel = onSetNotificationLevel,
+                onCopyLink = copyTopicLink,
+                onBookmark = bookmarkTopicAction,
+                onFlag = flagTopicAction,
+            )
+        }
+
+        items(
+            items = plainItems,
+            key = { item -> "${keyPrefix}_${item.topic.id}" },
+        ) { item ->
+            TopicRow(
+                item = item,
+                isHighlighted = item.topic.id in state.highlightedTopicIds,
+                revealed = revealedTopicId == item.topic.id,
+                onReveal = { opened -> revealedTopicId = item.topic.id.takeIf { opened } },
+                onSetNotificationLevel = if (onSetNotificationLevel != null) { level ->
+                    onSetNotificationLevel(item.topic, level)
+                } else null,
+                onCopyLink = { copyTopicLink(item.topic) },
+                onBookmark = bookmarkTopicAction?.let { fn -> { fn(item.topic) } },
+                onFlag = flagTopicAction?.let { fn -> { fn(item.topic) } },
+                onClick = { onOpenTopic(item.topic) },
+            )
+        }
+
+        if (state.loadingMore) {
+            item(key = "load-more") { LoadingBox() }
+        }
+    }
+
+    if (showSortSheet) {
+        TopicSortSheet(
+            currentOrder = sortOrder,
+            ascending = sortAscending,
+            onDismiss = { showSortSheet = false },
+            onSelectOrder = { order ->
+                onSortChange(order)
+                if (order == TopicSortOrder.Default || order != sortOrder) showSortSheet = false
+            },
+        )
     }
 
     flagTargetTopic?.let { topic ->
@@ -479,311 +470,82 @@ fun TopicListScreen(
     }
 }
 
-/** 列表右下角创建新话题悬浮按钮（笔状图标，与详情页回复按钮风格一致）。 */
+/** 右下角发帖按钮。 */
 @Composable
 private fun CreateTopicFab(onClick: () -> Unit) {
-    val tintColor = MaterialTheme.colorScheme.primary
-    val bgBase = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f)
-    val bgTint = tintColor.copy(alpha = 0.12f)
-    val borderColor = tintColor.copy(alpha = 0.28f)
-    Box(
-        Modifier
-            .size(46.dp)
-            .shadow(elevation = 3.dp, shape = CircleShape, clip = false)
-            .clip(CircleShape)
-            .background(bgBase)
-            .background(bgTint)
-            .border(1.dp, borderColor, CircleShape)
-            .clickable(onClick = onClick)
-            .semantics { contentDescription = "创建新话题" },
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(Modifier.size(20.dp)) {
-            scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-                val stroke = Stroke(width = 1.9f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                val pen = Path().apply {
-                    moveTo(4f, 20f)
-                    lineTo(8.5f, 19f)
-                    lineTo(19.5f, 8f)
-                    lineTo(16f, 4.5f)
-                    lineTo(5f, 15.5f)
-                    close()
-                }
-                drawPath(pen, tintColor, style = stroke)
-                drawLine(tintColor, Offset(13.5f, 7f), Offset(17f, 10.5f), strokeWidth = 1.8f, cap = StrokeCap.Round)
-                drawLine(tintColor, Offset(12.5f, 20f), Offset(20f, 20f), strokeWidth = 1.9f, cap = StrokeCap.Round)
-            }
-        }
+    FloatingActionButton(onClick = onClick) {
+        Icon(Icons.Outlined.Edit, contentDescription = "创建新话题")
     }
 }
 
-/** 列表右下角悬浮排序按钮（垂直双向箭头，位于发帖按钮上方）。 */
+/** 发帖按钮上方的排序按钮;选了非默认排序时换成强调色,一眼看出列表不是默认顺序。 */
 @Composable
-private fun TopicSortFab(
-    sortOrder: TopicSortOrder,
-    ascending: Boolean,
-    onClick: () -> Unit,
-) {
+private fun TopicSortFab(sortOrder: TopicSortOrder, onClick: () -> Unit) {
     val isDefault = sortOrder == TopicSortOrder.Default
-    val activeColor = MaterialTheme.colorScheme.primary
-    val tintColor = if (isDefault) MaterialTheme.colorScheme.onSurfaceVariant else activeColor
-    val bgBase = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.94f)
-    val borderColor = if (isDefault) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f) else activeColor.copy(alpha = 0.45f)
-
-    Box(
-        Modifier
-            .size(44.dp)
-            .shadow(elevation = 3.dp, shape = CircleShape, clip = false)
-            .clip(CircleShape)
-            .background(bgBase)
-            .border(1.dp, borderColor, CircleShape)
-            .clickable(onClick = onClick)
-            .semantics { contentDescription = "列表排序：${sortOrder.label}" },
-        contentAlignment = Alignment.Center,
+    SmallFloatingActionButton(
+        onClick = onClick,
+        containerColor = if (isDefault) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = if (isDefault) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onTertiaryContainer,
     ) {
-        Canvas(Modifier.size(19.dp)) {
-            scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-                val stroke = Stroke(width = 2.1f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                // 左侧向上箭头 (x=8)
-                drawLine(tintColor, Offset(8f, 18.5f), Offset(8f, 5.5f), strokeWidth = 2.1f, cap = StrokeCap.Round)
-                val leftArrow = Path().apply {
-                    moveTo(4.5f, 9.5f)
-                    lineTo(8f, 5.5f)
-                    lineTo(11.5f, 9.5f)
-                }
-                drawPath(leftArrow, tintColor, style = stroke)
-
-                // 右侧向下箭头 (x=16)
-                drawLine(tintColor, Offset(16f, 5.5f), Offset(16f, 18.5f), strokeWidth = 2.1f, cap = StrokeCap.Round)
-                val rightArrow = Path().apply {
-                    moveTo(12.5f, 14.5f)
-                    lineTo(16f, 18.5f)
-                    lineTo(19.5f, 14.5f)
-                }
-                drawPath(rightArrow, tintColor, style = stroke)
-            }
-        }
+        Icon(AppIcons.sort(sortOrder), contentDescription = "列表排序：${sortOrder.label}")
     }
 }
 
-/** 排序选项图标绘制 */
+/** 排序选择底部面板。再次点选当前排序方式会切换升降序。 */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopicSortIcon(
-    order: TopicSortOrder,
-    tint: Color,
-    modifier: Modifier = Modifier.size(18.dp),
-) {
-    Canvas(modifier) {
-        scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-            val stroke = Stroke(width = 1.9f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-            when (order) {
-                TopicSortOrder.Default -> {
-                    // 三条横线 ≡
-                    drawLine(tint, Offset(4f, 6.5f), Offset(20f, 6.5f), strokeWidth = 2f, cap = StrokeCap.Round)
-                    drawLine(tint, Offset(4f, 12f), Offset(16f, 12f), strokeWidth = 2f, cap = StrokeCap.Round)
-                    drawLine(tint, Offset(4f, 17.5f), Offset(12f, 17.5f), strokeWidth = 2f, cap = StrokeCap.Round)
-                }
-                TopicSortOrder.Activity -> {
-                    // 逆时针时钟刷新 ↺
-                    drawArc(
-                        color = tint,
-                        startAngle = -210f,
-                        sweepAngle = 300f,
-                        useCenter = false,
-                        topLeft = Offset(4.5f, 4.5f),
-                        size = androidx.compose.ui.geometry.Size(15f, 15f),
-                        style = stroke,
-                    )
-                    val arrow = Path().apply {
-                        moveTo(1.5f, 9.5f)
-                        lineTo(4.5f, 6.5f)
-                        lineTo(8f, 9.5f)
-                    }
-                    drawPath(arrow, tint, style = stroke)
-                    drawLine(tint, Offset(12f, 12f), Offset(12f, 8.5f), strokeWidth = 1.8f, cap = StrokeCap.Round)
-                    drawLine(tint, Offset(12f, 12f), Offset(14.5f, 12f), strokeWidth = 1.8f, cap = StrokeCap.Round)
-                }
-                TopicSortOrder.Created -> {
-                    // 日历 📅
-                    val cal = Path().apply {
-                        moveTo(4f, 7f)
-                        lineTo(20f, 7f)
-                        lineTo(20f, 20f)
-                        lineTo(4f, 20f)
-                        close()
-                    }
-                    drawPath(cal, tint, style = stroke)
-                    drawLine(tint, Offset(4f, 11f), Offset(20f, 11f), strokeWidth = 1.8f, cap = StrokeCap.Round)
-                    drawLine(tint, Offset(8f, 3.5f), Offset(8f, 7f), strokeWidth = 2f, cap = StrokeCap.Round)
-                    drawLine(tint, Offset(16f, 3.5f), Offset(16f, 7f), strokeWidth = 2f, cap = StrokeCap.Round)
-                }
-                TopicSortOrder.Likes -> {
-                    // 爱心 ♡
-                    val heart = Path().apply {
-                        moveTo(12f, 20.5f)
-                        cubicTo(10.5f, 19f, 4f, 13.5f, 4f, 8.5f)
-                        cubicTo(4f, 5.2f, 6.8f, 3.8f, 9.5f, 4.8f)
-                        cubicTo(10.8f, 5.3f, 11.6f, 6.2f, 12f, 7.2f)
-                        cubicTo(12.4f, 6.2f, 13.2f, 5.3f, 14.5f, 4.8f)
-                        cubicTo(17.2f, 3.8f, 20f, 5.2f, 20f, 8.5f)
-                        cubicTo(20f, 13.5f, 13.5f, 19f, 12f, 20.5f)
-                        close()
-                    }
-                    drawPath(heart, tint, style = stroke)
-                }
-                TopicSortOrder.Views -> {
-                    // 眼睛 👁
-                    val eye = Path().apply {
-                        moveTo(3f, 12f)
-                        cubicTo(6.5f, 6f, 17.5f, 6f, 21f, 12f)
-                        cubicTo(17.5f, 18f, 6.5f, 18f, 3f, 12f)
-                        close()
-                    }
-                    drawPath(eye, tint, style = stroke)
-                    drawCircle(tint, 2.8f, Offset(12f, 12f))
-                }
-                TopicSortOrder.Posts -> {
-                    // 回复数 💬
-                    val bubble = Path().apply {
-                        moveTo(4f, 6f)
-                        lineTo(20f, 6f)
-                        lineTo(20f, 16f)
-                        lineTo(10f, 16f)
-                        lineTo(6f, 19.5f)
-                        lineTo(6f, 16f)
-                        lineTo(4f, 16f)
-                        close()
-                    }
-                    drawPath(bubble, tint, style = stroke)
-                }
-                TopicSortOrder.Posters -> {
-                    // 参与者 👥
-                    drawCircle(tint, 3f, Offset(9f, 7.5f), style = stroke)
-                    val body1 = Path().apply {
-                        moveTo(4.5f, 18f)
-                        cubicTo(4.5f, 14f, 13.5f, 14f, 13.5f, 18f)
-                    }
-                    drawPath(body1, tint, style = stroke)
-
-                    drawCircle(tint, 2.4f, Offset(16.5f, 8.5f), style = stroke)
-                    val body2 = Path().apply {
-                        moveTo(13.8f, 18f)
-                        cubicTo(13.8f, 15f, 19.5f, 15f, 19.5f, 18f)
-                    }
-                    drawPath(body2, tint, style = stroke)
-                }
-            }
-        }
-    }
-}
-
-/**
- * 列表排序选择弹出框（复刻参考图 1 风格：带标题Header、7个图标选项、选中对勾与升降序切换）。
- */
-@Composable
-private fun TopicSortDialog(
+private fun TopicSortSheet(
     currentOrder: TopicSortOrder,
     ascending: Boolean,
     onDismiss: () -> Unit,
     onSelectOrder: (TopicSortOrder) -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .widthIn(min = 280.dp, max = 320.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .border(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
-                .padding(vertical = 6.dp),
-        ) {
-            // 顶部 Header: ≡ 排序：默认   ^
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onDismiss)
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TopicSortIcon(
-                    order = currentOrder,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(19.dp),
-                )
-                Spacer(Modifier.width(12.dp))
-                val sortSuffix = if (currentOrder != TopicSortOrder.Default) {
-                    if (ascending) " (升序)" else " (降序)"
-                } else ""
-                Text(
-                    text = "排序：${currentOrder.label}$sortSuffix",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                // 向上折叠指示符 ^
-                Canvas(Modifier.size(14.dp)) {
-                    val chevron = Path().apply {
-                        moveTo(2f, 9.5f)
-                        lineTo(7f, 4.5f)
-                        lineTo(12f, 9.5f)
-                    }
-                    drawPath(chevron, Color(0xFF8E8E93), style = Stroke(width = 2f, cap = StrokeCap.Round, join = StrokeJoin.Round))
-                }
-            }
-
-            ListDivider(startIndent = 14.dp, modifier = Modifier.padding(end = 14.dp))
-
-            // 7 个排序条目
-            TopicSortOrder.entries.forEach { order ->
-                val isSelected = order == currentOrder
-                val itemColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectOrder(order) }
-                        .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent)
-                        .padding(horizontal = 18.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TopicSortIcon(
-                        order = order,
-                        tint = itemColor,
-                        modifier = Modifier.size(19.dp),
-                    )
-                    Spacer(Modifier.width(14.dp))
-                    Text(
-                        text = order.label,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                        ),
-                        color = itemColor,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (isSelected) {
-                        if (order != TopicSortOrder.Default) {
-                            Text(
-                                text = if (ascending) "↑ 升序" else "↓ 降序",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                                color = itemColor,
-                                modifier = Modifier.padding(end = 8.dp),
-                            )
-                        }
-                        Canvas(Modifier.size(16.dp)) {
-                            val check = Path().apply {
-                                moveTo(2.5f, 8.5f)
-                                lineTo(6f, 12f)
-                                lineTo(13.5f, 4.5f)
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Text(
+            "排序方式",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+        )
+        TopicSortOrder.entries.forEach { order ->
+            val selected = order == currentOrder
+            ListItem(
+                headlineContent = { Text(order.label) },
+                leadingContent = { Icon(AppIcons.sort(order), contentDescription = null) },
+                trailingContent = if (selected) {
+                    {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (order != TopicSortOrder.Default) {
+                                Text(
+                                    if (ascending) "升序" else "降序",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Spacer(Modifier.width(8.dp))
                             }
-                            drawPath(check, itemColor, style = Stroke(width = 2.2f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                            Icon(Icons.Filled.Check, contentDescription = "已选", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
-                }
-            }
+                } else null,
+                colors = ListItemDefaults.colors(
+                    containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                ),
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable { onSelectOrder(order) },
+            )
         }
+        Text(
+            "再次点击当前排序方式可切换升序 / 降序",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+        )
     }
 }
 
 /**
- * 话题长按操作菜单（提醒四档 + 复制链接、添加书签、举报）。[TopicRow] 与 [PinnedGroupCard] 共用。
+ * 话题长按操作菜单(提醒四档 + 复制链接、添加书签、举报)。[TopicRow] 与 [PinnedGroupCard] 共用。
  */
 @Composable
 private fun NotificationLevelMenu(
@@ -797,33 +559,17 @@ private fun NotificationLevelMenu(
     onFlag: (() -> Unit)? = null,
 ) {
     if (!expanded) return
-    DropdownMenu(
-        expanded = true,
-        onDismissRequest = onDismiss,
-        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
+    DropdownMenu(expanded = true, onDismissRequest = onDismiss) {
         if (onPick != null) {
             val current = currentLevel ?: TopicNotificationLevel.Regular
             TopicNotificationLevel.entries.forEach { level ->
-                val isSelected = level == current
                 DropdownMenuItem(
                     enabled = !updating,
-                    modifier = if (isSelected) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)) else Modifier,
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            TopicNotificationIcon(level, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = level.title,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            )
-                            if (isSelected) {
-                                Spacer(Modifier.width(8.dp))
-                                Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    },
+                    text = { Text(level.title) },
+                    leadingIcon = { TopicNotificationIcon(level, modifier = Modifier.size(20.dp)) },
+                    trailingIcon = if (level == current) {
+                        { Icon(Icons.Filled.Check, contentDescription = "当前", tint = MaterialTheme.colorScheme.primary) }
+                    } else null,
                     onClick = {
                         onDismiss()
                         onPick(level)
@@ -831,53 +577,28 @@ private fun NotificationLevelMenu(
                 )
             }
         }
-        val hasExtraActions = onCopyLink != null || onBookmark != null || onFlag != null
-        if (onPick != null && hasExtraActions) {
-            ListDivider()
+        if (onPick != null && (onCopyLink != null || onBookmark != null || onFlag != null)) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
         }
-        if (onCopyLink != null) {
+        onCopyLink?.let { action ->
             DropdownMenuItem(
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        PostActionIcon(PostAction.CopyLink, false, modifier = Modifier.size(17.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("复制链接", color = MaterialTheme.colorScheme.onSurface)
-                    }
-                },
-                onClick = {
-                    onDismiss()
-                    onCopyLink()
-                },
+                text = { Text("复制链接") },
+                leadingIcon = { Icon(Icons.Outlined.Link, contentDescription = null) },
+                onClick = { onDismiss(); action() },
             )
         }
-        if (onBookmark != null) {
+        onBookmark?.let { action ->
             DropdownMenuItem(
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        PostActionIcon(PostAction.Bookmark, false, modifier = Modifier.size(17.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("添加书签", color = MaterialTheme.colorScheme.onSurface)
-                    }
-                },
-                onClick = {
-                    onDismiss()
-                    onBookmark()
-                },
+                text = { Text("添加书签") },
+                leadingIcon = { Icon(Icons.Outlined.BookmarkBorder, contentDescription = null) },
+                onClick = { onDismiss(); action() },
             )
         }
-        if (onFlag != null) {
+        onFlag?.let { action ->
             DropdownMenuItem(
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        PostActionIcon(PostAction.Flag, false, modifier = Modifier.size(17.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("举报", color = MaterialTheme.colorScheme.onSurface)
-                    }
-                },
-                onClick = {
-                    onDismiss()
-                    onFlag()
-                },
+                text = { Text("举报") },
+                leadingIcon = { Icon(Icons.Outlined.Flag, contentDescription = null) },
+                onClick = { onDismiss(); action() },
             )
         }
     }
@@ -905,11 +626,14 @@ private fun pinnedPrefixGroups(
 @Composable
 private fun topicRowBackground(isHighlighted: Boolean): Color {
     val background by animateColorAsState(
-        targetValue = if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceContainerLow,
+        targetValue = if (isHighlighted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         animationSpec = tween(if (isHighlighted) 100 else 450), label = "topic-highlight",
     )
     return background
 }
+
+/** 列表卡片的外边距与形状,置顶卡与普通卡保持一致。 */
+private val CardOuterPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
 
 /**
  * 置顶帖合并卡。
@@ -917,7 +641,7 @@ private fun topicRowBackground(isHighlighted: Boolean): Color {
  * 站方同时挂多条全局置顶时,每条各铺一张完整卡片会把首屏吃光 —— 下拉刷新后想看的新帖只剩一条。
  * 这里把同一作者的连续置顶折成一张卡:只保留作者身份(头像 + 用户名 + Lv 徽章)和标题行,
  * 摘要、缩略图、回复/浏览/时间与标签全部省掉。标题仍走 [titleWithBadges],
- * 所以未读蓝点、"置顶""已关闭"标记不必重写一套。
+ * 所以未读蓝点、"已关闭"标记不必重写一套。
  *
  * 不做左滑四档抽屉:一张卡对应多个话题,左滑该落到哪一条没有明确语义;
  * 要单独设免打扰就长按对应那一行标题。
@@ -934,85 +658,96 @@ fun PinnedGroupCard(
     isHighlighted: Boolean = false,
 ) {
     val head = items.firstOrNull() ?: return
-    val rowBackground = topicRowBackground(isHighlighted)
     var menuTopicId by remember { mutableStateOf<Long?>(null) }
     val hasAnyLongPress = onSetNotificationLevel != null || onCopyLink != null || onBookmark != null || onFlag != null
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(rowBackground)
-            .padding(horizontal = Dimens.screenPadding, vertical = 10.dp),
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(CardOuterPadding),
+        shape = MaterialTheme.shapes.large,
+        color = topicRowBackground(isHighlighted),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                UserAvatar(
-                    avatarUrl = head.avatarUrl,
-                    fallbackUrl = head.staticAvatarUrl,
-                    username = head.authorUsername,
-                    modifier = Modifier.size(24.dp),
-                    cornerRadius = 3.5.dp,
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = head.displayName.ifBlank { "匿名" },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                head.trustLevel?.takeIf { it > 0 }?.let { level ->
-                    Spacer(Modifier.width(4.dp))
-                    LevelBadge(level)
+        Column(Modifier.padding(vertical = 8.dp)) {
+            Row(
+                Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    UserAvatar(
+                        avatarUrl = head.avatarUrl,
+                        fallbackUrl = head.staticAvatarUrl,
+                        username = head.authorUsername,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = head.displayName.ifBlank { "匿名" },
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    head.trustLevel?.takeIf { it > 0 }?.let { level ->
+                        Spacer(Modifier.width(6.dp))
+                        LevelBadge(level)
+                    }
                 }
-            }
-            Text(
-                text = "置顶 ${items.size}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        items.forEach { entry ->
-            Spacer(Modifier.height(6.dp))
-            Box {
+                Icon(
+                    Icons.Filled.PushPin,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(4.dp))
                 Text(
-                    text = titleWithBadges(entry.topic, MaterialTheme.colorScheme.primary),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    inlineContent = unseenDotContent(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = { onOpenTopic(entry.topic) },
-                            onLongClick = if (hasAnyLongPress && !entry.notificationLevelUpdating) {
-                                { menuTopicId = entry.topic.id }
-                            } else null,
-                        ),
+                    text = "置顶 ${items.size}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
                 )
-                NotificationLevelMenu(
-                    expanded = menuTopicId == entry.topic.id && hasAnyLongPress,
-                    currentLevel = entry.notificationLevel,
-                    updating = entry.notificationLevelUpdating,
-                    onDismiss = { menuTopicId = null },
-                    onPick = onSetNotificationLevel?.let { fn -> { level -> fn(entry.topic, level) } },
-                    onCopyLink = onCopyLink?.let { fn -> { fn(entry.topic) } },
-                    onBookmark = onBookmark?.let { fn -> { fn(entry.topic) } },
-                    onFlag = onFlag?.let { fn -> { fn(entry.topic) } },
-                )
+            }
+            items.forEach { entry ->
+                Box {
+                    Text(
+                        text = titleWithBadges(entry.topic.copy(pinned = false), MaterialTheme.colorScheme.primary),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        inlineContent = unseenDotContent(MaterialTheme.colorScheme.primary),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .combinedClickable(
+                                onClick = { onOpenTopic(entry.topic) },
+                                onLongClick = if (hasAnyLongPress && !entry.notificationLevelUpdating) {
+                                    { menuTopicId = entry.topic.id }
+                                } else null,
+                            )
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                    NotificationLevelMenu(
+                        expanded = menuTopicId == entry.topic.id && hasAnyLongPress,
+                        currentLevel = entry.notificationLevel,
+                        updating = entry.notificationLevelUpdating,
+                        onDismiss = { menuTopicId = null },
+                        onPick = onSetNotificationLevel?.let { fn -> { level -> fn(entry.topic, level) } },
+                        onCopyLink = onCopyLink?.let { fn -> { fn(entry.topic) } },
+                        onBookmark = onBookmark?.let { fn -> { fn(entry.topic) } },
+                        onFlag = onFlag?.let { fn -> { fn(entry.topic) } },
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * 紧凑高效风列表卡片(三段式)。
+ * 话题卡片(三段式):顶栏(作者 + Lv + 分类)、主体(标题 + 按需摘要 + 按需首图)、
+ * 底栏(回复 / 浏览 / 活动时间 + 标签)。
  *
  * 之所以不给摘要和多图预留固定区域:linux.do 的 /latest.json 对普通帖**不下发 excerpt**
- * (只有置顶帖和搜索结果有),图也只给单张 image_url。硬留版位要么大面积留白、一屏只剩两条,
- * 要么得逐帖拉详情去凑内容 —— 那是在拿跳盾风险换排版。所以这里"有就展开、没有就收起":
- * 顶栏(作者 + Lv + 分类)、主体(标题 + 按需摘要 + 按需首图)、底栏(回复 / 浏览 / 活动时间 + 标签)。
+ * (只有置顶帖和搜索结果有),图也只给单张 image_url。硬留版位要么大面积留白,
+ * 要么得逐帖拉详情去凑内容 —— 那是在拿跳盾风险换排版。所以这里"有就展开、没有就收起"。
+ *
+ * 左滑露出四档提醒级别;长按弹出完整操作菜单。
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -1031,7 +766,7 @@ fun TopicRow(
     var showLevelMenu by remember { mutableStateOf(false) }
     val hasAnyLongPress = onSetNotificationLevel != null || onCopyLink != null || onBookmark != null || onFlag != null
     val topic = item.topic
-    val drawerWidth = with(LocalDensity.current) { 240.dp.toPx() }
+    val drawerWidth = with(LocalDensity.current) { (DrawerSlotWidth * TopicNotificationLevel.entries.size).toPx() }
     var dragging by remember(topic.id) { mutableStateOf(false) }
     var dragOffset by remember(topic.id) { mutableFloatStateOf(0f) }
     val currentRevealed by rememberUpdatedState(revealed)
@@ -1060,159 +795,166 @@ fun TopicRow(
             append(raw.substring(cursor))
         }
     }
-    Box(Modifier.fillMaxWidth().clipToBounds()) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(CardOuterPadding)
+            .clip(MaterialTheme.shapes.large),
+    ) {
         if (onSetNotificationLevel != null && (revealed || dragging || offset < 0f)) {
             Row(Modifier.matchParentSize(), horizontalArrangement = Arrangement.End) {
                 TopicNotificationLevel.entries.forEach { level ->
-                    Box(Modifier.width(60.dp).fillMaxHeight()
-                        .background(notificationLevelColor(level))
-                        .clickable(enabled = !item.notificationLevelUpdating) {
-                            onReveal(false)
-                            onSetNotificationLevel(level)
-                        }, contentAlignment = Alignment.Center) {
-                        Text(level.badgeLabel, style = MaterialTheme.typography.bodySmall, color = Color.White)
+                    val (container, content) = notificationLevelContainer(level)
+                    Column(
+                        Modifier
+                            .width(DrawerSlotWidth)
+                            .fillMaxHeight()
+                            .background(container)
+                            .clickable(enabled = !item.notificationLevelUpdating) {
+                                onReveal(false)
+                                onSetNotificationLevel(level)
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(AppIcons.notificationLevel(level), contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.height(4.dp))
+                        Text(level.badgeLabel, style = MaterialTheme.typography.labelSmall, color = content)
                     }
                 }
             }
         }
         Column(
-        Modifier
-            .fillMaxWidth()
-            .graphicsLayer { translationX = offset }
-            .background(rowBackground)
-            .then(if (onSetNotificationLevel == null) Modifier else Modifier.pointerInput(topic.id, drawerWidth, item.notificationLevelUpdating) {
-                if (!item.notificationLevelUpdating) detectHorizontalDragGestures(
-                    onDragStart = {
-                        dragOffset = if (currentRevealed) -drawerWidth else 0f
-                        dragging = true
-                        onReveal(true)
-                    },
-                    onHorizontalDrag = { change, distance ->
-                        change.consume()
-                        dragOffset = (dragOffset + distance).coerceIn(-drawerWidth, 0f)
-                    },
-                    onDragEnd = { dragging = false; onReveal(dragOffset < -drawerWidth / 3f) },
-                    onDragCancel = { dragging = false; onReveal(false) },
+            Modifier
+                .fillMaxWidth()
+                .graphicsLayer { translationX = offset }
+                .background(rowBackground)
+                .then(if (onSetNotificationLevel == null) Modifier else Modifier.pointerInput(topic.id, drawerWidth, item.notificationLevelUpdating) {
+                    if (!item.notificationLevelUpdating) detectHorizontalDragGestures(
+                        onDragStart = {
+                            dragOffset = if (currentRevealed) -drawerWidth else 0f
+                            dragging = true
+                            onReveal(true)
+                        },
+                        onHorizontalDrag = { change, distance ->
+                            change.consume()
+                            dragOffset = (dragOffset + distance).coerceIn(-drawerWidth, 0f)
+                        },
+                        onDragEnd = { dragging = false; onReveal(dragOffset < -drawerWidth / 3f) },
+                        onDragCancel = { dragging = false; onReveal(false) },
+                    )
+                })
+                .combinedClickable(
+                    onClick = { if (revealed) onReveal(false) else onClick() },
+                    onLongClick = if (hasAnyLongPress && !item.notificationLevelUpdating) {
+                        { onReveal(false); showLevelMenu = true }
+                    } else null,
                 )
-            })
-            .combinedClickable(
-                onClick = { if (revealed) onReveal(false) else onClick() },
-                onLongClick = if (hasAnyLongPress && !item.notificationLevelUpdating) {
-                    { onReveal(false); showLevelMenu = true }
-                } else null,
-            )
-            .padding(horizontal = Dimens.screenPadding, vertical = 10.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // 作者区整体吃掉除分类外的全部宽度,分类才能稳定贴住右边界 ——
-            // 否则作者名和弹性空隙会平分剩余宽度,分类的位置就跟着用户名长短左右浮动,
-            // 上下相邻卡片的分类对不成一条竖线。
-            Row(
-                Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                UserAvatar(
-                    avatarUrl = item.avatarUrl,
-                    fallbackUrl = item.staticAvatarUrl,
-                    username = item.authorUsername,
-                    modifier = Modifier.size(24.dp),
-                    cornerRadius = 3.5.dp,
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = item.displayName.ifBlank { "匿名" },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                item.trustLevel?.takeIf { it > 0 }?.let { level ->
-                    Spacer(Modifier.width(4.dp))
-                    LevelBadge(level)
-                }
-            }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // 作者区吃掉除分类外的全部宽度,分类才能稳定贴住右边界,上下卡片的分类对成一条竖线。
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    UserAvatar(
+                        avatarUrl = item.avatarUrl,
+                        fallbackUrl = item.staticAvatarUrl,
+                        username = item.authorUsername,
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = item.displayName.ifBlank { "匿名" },
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    item.trustLevel?.takeIf { it > 0 }?.let { level ->
+                        Spacer(Modifier.width(6.dp))
+                        LevelBadge(level)
+                    }
+                }
                 item.notificationLevel?.takeIf { it != TopicNotificationLevel.Regular }?.let { level ->
                     TopicNotificationLevelTag(level)
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(8.dp))
                 }
-                item.category?.let {
-                    CategoryTag(it)
-                }
+                item.category?.let { CategoryTag(it) }
             }
-        }
-        NotificationLevelMenu(
-            expanded = showLevelMenu && hasAnyLongPress,
-            currentLevel = item.notificationLevel,
-            updating = item.notificationLevelUpdating,
-            onDismiss = { showLevelMenu = false },
-            onPick = onSetNotificationLevel,
-            onCopyLink = onCopyLink,
-            onBookmark = onBookmark,
-            onFlag = onFlag,
-        )
-        Spacer(Modifier.height(6.dp))
-        Row {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = titleWithBadges(topic, MaterialTheme.colorScheme.primary, query),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    inlineContent = unseenDotContent(MaterialTheme.colorScheme.primary),
-                )
-                excerpt?.let { text ->
-                    Spacer(Modifier.height(4.dp))
+            NotificationLevelMenu(
+                expanded = showLevelMenu && hasAnyLongPress,
+                currentLevel = item.notificationLevel,
+                updating = item.notificationLevelUpdating,
+                onDismiss = { showLevelMenu = false },
+                onPick = onSetNotificationLevel,
+                onCopyLink = onCopyLink,
+                onBookmark = onBookmark,
+                onFlag = onFlag,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row {
+                Column(Modifier.weight(1f)) {
                     Text(
-                        text = text,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = if (query.isNullOrBlank()) 2 else 3,
+                        text = titleWithBadges(topic, MaterialTheme.colorScheme.primary, query),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
+                        inlineContent = unseenDotContent(MaterialTheme.colorScheme.primary),
+                    )
+                    excerpt?.let { text ->
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = text,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = if (query.isNullOrBlank()) 2 else 3,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                topic.imageUrl?.takeIf { it.isNotBlank() }?.let { url ->
+                    Spacer(Modifier.width(12.dp))
+                    AsyncImage(
+                        model = url,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(width = 76.dp, height = 56.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                     )
                 }
             }
-            topic.imageUrl?.takeIf { it.isNotBlank() }?.let { url ->
-                Spacer(Modifier.width(10.dp))
-                AsyncImage(
-                    model = url,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(width = 72.dp, height = 54.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                )
-            }
-        }
-        Spacer(Modifier.height(7.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            MetaStat(formatCount(topic.totalReplies), textWidth = 30.dp) { ReplyGlyph(it) }
-            if (topic.views > 0) {
-                Spacer(Modifier.width(10.dp))
-                MetaStat(formatCount(topic.views), textWidth = 34.dp) { ViewGlyph(it) }
-            }
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ClockGlyph(MaterialTheme.colorScheme.outline)
-                Spacer(Modifier.width(3.dp))
-                Text(
-                    text = RelativeTime.format(topic.bumpedAt ?: topic.lastPostedAt ?: topic.createdAt),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
+                MetaStat(Icons.Outlined.ChatBubbleOutline, formatCount(topic.totalReplies), textWidth = 30.dp)
+                if (topic.views > 0) {
+                    Spacer(Modifier.width(12.dp))
+                    MetaStat(Icons.Outlined.Visibility, formatCount(topic.views), textWidth = 34.dp)
+                }
+                Spacer(Modifier.width(12.dp))
+                MetaStat(Icons.Outlined.Schedule, RelativeTime.format(topic.bumpedAt ?: topic.lastPostedAt ?: topic.createdAt))
+                Spacer(Modifier.weight(1f))
+                topic.tags.take(2).forEach { tag ->
+                    Spacer(Modifier.width(4.dp))
+                    TagChip(tag)
+                }
             }
-            Spacer(Modifier.weight(1f))
-            topic.tags.take(2).forEach { tag ->
-                Spacer(Modifier.width(4.dp))
-                TagChip(tag)
-            }
-        }
         }
     }
+}
+
+/** 左滑抽屉里每一档提醒级别占的宽度。 */
+private val DrawerSlotWidth = 60.dp
+
+/** 左滑抽屉里各档提醒级别的底色与前景色,用色板容器色保证浅色深色都清楚。 */
+@Composable
+private fun notificationLevelContainer(level: TopicNotificationLevel): Pair<Color, Color> = when (level) {
+    TopicNotificationLevel.Watching -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+    TopicNotificationLevel.Tracking -> AppTheme.colors.successContainer to AppTheme.colors.onSuccessContainer
+    TopicNotificationLevel.Regular -> MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant
+    TopicNotificationLevel.Muted -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
 }
 
 /** 一档信任等级的配色。描边与文字都留 Brush 口子,好让高等级上金属渐变和彩虹。 */
@@ -1319,89 +1061,39 @@ private fun CrownGlyph(color: Color) {
 
 @Composable
 private fun TagChip(tag: String) {
-    Text(
-        text = tag,
-        fontSize = 10.sp,
-        lineHeight = 12.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        maxLines = 1,
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .padding(horizontal = 5.dp, vertical = 1.dp),
-    )
+    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer) {
+        Text(
+            text = tag,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
 }
 
 /**
- * 底栏的一项统计。数字区**定宽**:回复数从 1 位变 3 位,整条底栏后面的浏览量和时间就会
- * 跟着左右平移,上下相邻卡片对不成竖线。同时开 `tnum` 等宽数字 —— 比例字体里 "1" 比 "8" 窄,
- * 不然即使容器定宽,数字本身也仍然参差。
+ * 底栏的一项统计。传了 [textWidth] 时数字区**定宽**并开 `tnum` 等宽数字:
+ * 回复数从 1 位变 3 位时,后面的浏览量和时间就不会跟着左右平移,上下卡片对得齐。
  */
 @Composable
-private fun MetaStat(value: String, textWidth: Dp, glyph: @Composable (Color) -> Unit) {
-    val color = MaterialTheme.colorScheme.outline
+private fun MetaStat(icon: ImageVector, value: String, textWidth: Dp? = null) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        glyph(color)
-        Spacer(Modifier.width(3.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(4.dp))
         Text(
             text = value,
             style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
-            modifier = Modifier.width(textWidth),
+            modifier = if (textWidth != null) Modifier.width(textWidth) else Modifier,
         )
-    }
-}
-
-/** 回复气泡。自己画而不用 emoji —— 各机型的 emoji 字体会让这一行的高度和配色乱掉。 */
-@Composable
-private fun ReplyGlyph(color: Color) {
-    Canvas(Modifier.size(11.dp)) {
-        val bubbleHeight = size.height * 0.74f
-        drawRoundRect(
-            color = color,
-            size = Size(size.width, bubbleHeight),
-            cornerRadius = CornerRadius(size.width * 0.24f),
-            style = Stroke(size.width * 0.12f),
-        )
-        val tail = Path().apply {
-            moveTo(size.width * 0.26f, bubbleHeight * 0.92f)
-            lineTo(size.width * 0.3f, size.height)
-            lineTo(size.width * 0.54f, bubbleHeight * 0.92f)
-            close()
-        }
-        drawPath(tail, color)
-    }
-}
-
-@Composable
-private fun ViewGlyph(color: Color) {
-    Canvas(Modifier.size(11.dp)) {
-        drawOval(
-            color = color,
-            topLeft = Offset(0f, size.height * 0.18f),
-            size = Size(size.width, size.height * 0.64f),
-            style = Stroke(size.width * 0.11f),
-        )
-        drawCircle(color, size.width * 0.16f, Offset(size.width / 2f, size.height / 2f))
-    }
-}
-
-/** 小钟表图标。与气泡、眼睛保持相同的 11.dp 紧凑比例。 */
-@Composable
-private fun ClockGlyph(color: Color) {
-    Canvas(Modifier.size(11.dp)) {
-        scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-            drawCircle(color, radius = 9f, center = Offset(12f, 12f), style = Stroke(2.2f))
-            drawLine(color, Offset(12f, 7.5f), Offset(12f, 12f), strokeWidth = 2.2f, cap = StrokeCap.Round)
-            drawLine(color, Offset(12f, 12f), Offset(15.5f, 12f), strokeWidth = 2.2f, cap = StrokeCap.Round)
-        }
     }
 }
 
 /**
- * 未读蓝点与置顶/关闭标记都内联进标题文本流,和标题共占 2 行配额,
- * 不在标题上方额外占一行 —— 紧凑卡片经不起多一行的开销。
+ * 未读蓝点与置顶 / 关闭标记都内联进标题文本流,和标题共占 2 行配额,
+ * 不在标题上方额外占一行。
  */
 private fun titleWithBadges(topic: Topic, accent: Color, query: String? = null) = buildAnnotatedString {
     if (topic.unseen) {
@@ -1409,13 +1101,11 @@ private fun titleWithBadges(topic: Topic, accent: Color, query: String? = null) 
         append(" ")
     }
     if (topic.pinned) {
-        withStyle(SpanStyle(color = accent, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)) {
-            append("置顶")
-        }
+        withStyle(SpanStyle(color = accent, fontWeight = FontWeight.SemiBold)) { append("置顶") }
         append(" ")
     }
     if (topic.closed) {
-        withStyle(SpanStyle(color = accent.copy(alpha = 0.7f), fontSize = 15.sp)) { append("已关闭") }
+        withStyle(SpanStyle(color = accent.copy(alpha = 0.7f))) { append("已关闭") }
         append(" ")
     }
     val title = topic.title
@@ -1488,37 +1178,47 @@ internal fun ErrorNotice(message: String, onRetry: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = Dimens.screenPadding, vertical = 20.dp),
+            .padding(horizontal = 32.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Icon(
+            Icons.Outlined.ErrorOutline,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(40.dp),
+        )
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
-        Text(
-            text = "重试",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .clickable(onClick = onRetry)
-                .padding(horizontal = 16.dp, vertical = 6.dp),
-        )
+        FilledTonalButton(onClick = onRetry) {
+            Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("重试")
+        }
     }
 }
 
 @Composable
 internal fun EmptyNotice() {
-    Box(
-        Modifier.fillMaxWidth().padding(vertical = 48.dp),
-        contentAlignment = Alignment.Center,
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 56.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Icon(
+            Icons.Outlined.Inbox,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.size(48.dp),
+        )
         Text(
             text = "这里还没有内容",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -1530,43 +1230,27 @@ fun parseCategoryColor(hex: String?): Color? {
     return runCatching { Color(cleaned.toLong(16) or 0xFF000000L) }.getOrNull()
 }
 
+/** 首页 feed 标签(最新 / 未读 / 热门 / 我的帖子),紧贴顶栏下方。 */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HomeFeedCollapsedBar(
+private fun FeedTabs(
     currentFeed: HomeFeedType,
     onFeedSelect: (HomeFeedType) -> Unit,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+    val feeds = HomeFeedType.entries
+    PrimaryTabRow(
+        selectedTabIndex = feeds.indexOf(currentFeed).coerceAtLeast(0),
+        containerColor = MaterialTheme.colorScheme.surface,
+        divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)) },
     ) {
-        HomeFeedType.entries.forEach { feed ->
-            val selected = feed == currentFeed
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .clickable { onFeedSelect(feed) }
-                    .padding(horizontal = 2.dp, vertical = 2.dp),
-            ) {
-                Text(
-                    text = feed.label,
-                    fontSize = if (selected) 16.sp else 14.sp,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(2.dp))
-                if (selected) {
-                    Box(
-                        modifier = Modifier
-                            .width(16.dp)
-                            .height(2.5.dp)
-                            .clip(RoundedCornerShape(1.25.dp))
-                            .background(MaterialTheme.colorScheme.primary),
-                    )
-                } else {
-                    Spacer(Modifier.height(2.5.dp))
-                }
-            }
+        feeds.forEach { feed ->
+            Tab(
+                selected = feed == currentFeed,
+                onClick = { onFeedSelect(feed) },
+                text = { Text(feed.label, style = MaterialTheme.typography.titleSmall) },
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -1579,12 +1263,12 @@ internal fun categoryLevelOf(category: Category): Int =
 internal fun categoryBaseNameOf(name: String): String =
     name.replace(CATEGORY_LEVEL_REGEX, "").trim().ifBlank { name }
 
+/** 分类页标题:分类名 + 当前等级,点开在同一分类的各等级(Lv0~Lv3)之间切换。 */
 @Composable
 private fun CategoryVariantSelector(
     title: String,
     variants: List<Category>,
     currentCategoryId: Int?,
-    collapsed: Boolean,
     onSelect: (Category) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -1593,133 +1277,73 @@ private fun CategoryVariantSelector(
         ?: CATEGORY_LEVEL_REGEX.find(title)?.groupValues?.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 3)
         ?: 0
     val baseTitle = categoryBaseNameOf(currentCategory?.name ?: title)
-    val isDark = AppTheme.isDark
-
-    val (pillBg, pillBorder, pillText) = levelPillColors(currentLevel, isDark)
 
     Box {
         Row(
             modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
+                .clip(MaterialTheme.shapes.small)
                 .clickable { expanded = true }
-                .padding(
-                    bottom = if (collapsed) 0.dp else 6.dp,
-                    end = 4.dp,
-                ),
+                .padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                text = baseTitle,
-                style = if (collapsed) {
-                    MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                } else {
-                    MaterialTheme.typography.headlineSmall
-                },
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            Text(baseTitle, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            LevelPill(currentLevel)
+            Icon(
+                if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                contentDescription = "切换等级",
             )
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(pillBg)
-                    .border(0.8.dp, pillBorder, RoundedCornerShape(6.dp))
-                    .padding(
-                        horizontal = if (collapsed) 6.dp else 8.dp,
-                        vertical = if (collapsed) 2.dp else 3.5.dp,
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = "Lv.$currentLevel",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontSize = if (collapsed) 11.sp else 12.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    color = pillText,
-                )
-                DropdownChevronGlyph(
-                    color = pillText,
-                    expanded = expanded,
-                    size = if (collapsed) 9.dp else 10.dp,
-                )
-            }
         }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            shape = RoundedCornerShape(14.dp),
-        ) {
-            variants.forEachIndexed { idx, variant ->
-                val level = categoryLevelOf(variant)
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            variants.forEach { variant ->
                 val selected = variant.id == currentCategoryId
-                val (itemBg, itemBorder, itemText) = levelPillColors(level, isDark)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            expanded = false
-                            onSelect(variant)
+                DropdownMenuItem(
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(categoryBaseNameOf(variant.name))
+                            Spacer(Modifier.width(8.dp))
+                            LevelPill(categoryLevelOf(variant))
                         }
-                        .background(
-                            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent,
+                    },
+                    leadingIcon = {
+                        Box(
+                            Modifier
+                                .size(10.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(parseCategoryColor(variant.color) ?: MaterialTheme.colorScheme.outline),
                         )
-                        .padding(horizontal = 14.dp, vertical = 11.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        Modifier
-                            .size(8.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(parseCategoryColor(variant.color) ?: MaterialTheme.colorScheme.outline),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = categoryBaseNameOf(variant.name),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(5.dp))
-                            .background(itemBg)
-                            .border(0.7.dp, itemBorder, RoundedCornerShape(5.dp))
-                            .padding(horizontal = 6.dp, vertical = 1.5.dp),
-                    ) {
-                        Text(
-                            text = "Lv.$level",
-                            style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                            color = itemText,
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Spacer(Modifier.width(14.dp))
-                    if (selected) {
-                        Text(
-                            text = "✓",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    } else if (variant.topicCount > 0) {
-                        Text(
-                            text = "${variant.topicCount}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline,
-                        )
-                    }
-                }
-                if (idx < variants.lastIndex) {
-                    ListDivider(startIndent = 14.dp)
-                }
+                    },
+                    trailingIcon = when {
+                        selected -> {
+                            { Icon(Icons.Filled.Check, contentDescription = "当前", tint = MaterialTheme.colorScheme.primary) }
+                        }
+                        variant.topicCount > 0 -> {
+                            { Text("${variant.topicCount}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline) }
+                        }
+                        else -> null
+                    },
+                    onClick = {
+                        expanded = false
+                        onSelect(variant)
+                    },
+                )
             }
         }
+    }
+}
+
+/** 分类等级药丸。色值与话题卡上的 Lv 徽章同源,同一个 Lv 在各页面是同一种颜色。 */
+@Composable
+private fun LevelPill(level: Int) {
+    val (bg, border, text) = levelPillColors(level, AppTheme.isDark)
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(bg)
+            .border(0.8.dp, border, RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        Text("Lv.$level", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = text)
     }
 }
 
@@ -1742,70 +1366,27 @@ internal fun levelPillColors(level: Int, isDark: Boolean): Triple<Color, Color, 
     else -> Triple(Color(0xFF4A3410), Color(0xFFD4AF37), Color(0xFFFFE28A))
 }
 
-@Composable
-private fun DropdownChevronGlyph(
-    color: Color,
-    expanded: Boolean,
-    size: Dp,
-) {
-    Canvas(Modifier.size(size)) {
-        val w = this.size.width
-        val h = this.size.height
-        val path = Path().apply {
-            if (expanded) {
-                moveTo(w * 0.18f, h * 0.68f)
-                lineTo(w * 0.5f, h * 0.32f)
-                lineTo(w * 0.82f, h * 0.68f)
-            } else {
-                moveTo(w * 0.18f, h * 0.34f)
-                lineTo(w * 0.5f, h * 0.70f)
-                lineTo(w * 0.82f, h * 0.34f)
-            }
-        }
-        drawPath(
-            path = path,
-            color = color,
-            style = Stroke(width = w * 0.2f, cap = StrokeCap.Round),
-        )
-    }
-}
-
+/** 列表顶部浮出的"有新动态"提示,点击并入新话题并回到顶部。 */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IncomingTopicsBanner(
     count: Int,
     onClick: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .padding(horizontal = 20.dp, vertical = 4.dp)
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(22.dp),
-                spotColor = Color(0x33007AFF),
-                ambientColor = Color(0x22007AFF),
-            )
-            .clip(RoundedCornerShape(22.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), RoundedCornerShape(22.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
-        contentAlignment = Alignment.Center,
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shadowElevation = 6.dp,
     ) {
         Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
         ) {
-            val dotColor = MaterialTheme.colorScheme.primary
-            Canvas(modifier = Modifier.size(7.dp)) {
-                drawCircle(color = dotColor)
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "有 $count 条新话题动态，点击查看 ↑",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-            )
+            Icon(Icons.Filled.ArrowUpward, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("$count 条新动态", style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -1840,27 +1421,12 @@ private fun notificationLevelColor(level: TopicNotificationLevel): Color = when 
 
 @Composable
 internal fun TopicNotificationIcon(level: TopicNotificationLevel, modifier: Modifier = Modifier) {
-    val color = notificationLevelColor(level)
-    Canvas(modifier.size(18.dp)) {
-        scale(size.width / 24f, size.height / 24f, Offset.Zero) {
-            val bell = Path().apply {
-                moveTo(5f, 17f)
-                lineTo(7f, 14f)
-                lineTo(7f, 9f)
-                cubicTo(7f, 2.5f, 17f, 2.5f, 17f, 9f)
-                lineTo(17f, 14f)
-                lineTo(19f, 17f)
-                close()
-            }
-            drawPath(bell, color, style = Stroke(1.7f, cap = StrokeCap.Round))
-            drawLine(color, Offset(10f, 20f), Offset(14f, 20f), 1.7f, StrokeCap.Round)
-            if (level == TopicNotificationLevel.Muted) {
-                drawLine(color, Offset(3f, 3f), Offset(21f, 21f), 1.7f, StrokeCap.Round)
-            } else if (level == TopicNotificationLevel.Watching) {
-                drawCircle(color, 2f, Offset(20f, 4f))
-            }
-        }
-    }
+    Icon(
+        AppIcons.notificationLevel(level),
+        contentDescription = level.title,
+        tint = notificationLevelColor(level),
+        modifier = modifier.size(18.dp),
+    )
 }
 
 @Composable
@@ -1871,138 +1437,24 @@ private fun TopicFlagDialog(
     onDismiss: () -> Unit,
     onSubmit: (reasonId: Int, message: String?) -> Unit,
 ) {
-    var selectedReason by remember(topic.id) { mutableStateOf(PostFlagReason.Spam) }
-    var customMessage by rememberSaveable(topic.id) { mutableStateOf("") }
-
-    Dialog(onDismissRequest = { if (!submitting) onDismiss() }) {
-        Column(
-            modifier = Modifier
-                .widthIn(min = 280.dp, max = 360.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                "举报话题",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                topic.title,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                PostFlagReason.entries.forEach { reason ->
-                    val isSelected = selectedReason == reason
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent)
-                            .clickable(enabled = !submitting) { selectedReason = reason }
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .border(
-                                    1.5.dp,
-                                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                                    CircleShape,
-                                ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (isSelected) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(MaterialTheme.colorScheme.primary, CircleShape),
-                                )
-                            }
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Column {
-                            Text(reason.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                            Text(reason.description, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-            }
-
-            if (selectedReason.requiresMessage) {
-                BasicTextField(
-                    value = customMessage,
-                    enabled = !submitting,
-                    onValueChange = { customMessage = it },
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(72.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                        .padding(8.dp),
-                    decorationBox = { innerTextField ->
-                        if (customMessage.isEmpty()) {
-                            Text("请详细说明需要版主处理的问题...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
-                        }
-                        innerTextField()
-                    },
-                )
-            }
-            error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                        .clickable(enabled = !submitting, onClick = onDismiss),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("取消", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                val canSubmit = !submitting && (!selectedReason.requiresMessage || customMessage.isNotBlank())
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (canSubmit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
-                        .clickable(enabled = canSubmit) {
-                            onSubmit(selectedReason.id, customMessage.trim().takeIf { selectedReason.requiresMessage })
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        if (submitting) "提交中…" else "提交",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color.White,
-                    )
-                }
-            }
-        }
-    }
+    FlagReasonDialog(
+        title = "举报话题",
+        subtitle = topic.title,
+        stateKey = topic.id,
+        submitting = submitting,
+        error = error,
+        onDismiss = onDismiss,
+        onSubmit = onSubmit,
+    )
 }
 
 /**
- * 辅助悬浮按钮设计方案（单功能直达 / 多功能伞型自适应展开，支持自由拖拽与边缘吸附记忆）。
+ * 辅助悬浮按钮:单功能时直接触发;多功能时点击展开成一组小按钮(扇形排布,
+ * 按所在象限自动选择展开方向)。支持拖到任意位置,松手后记住位置。
  */
 @Composable
 private fun FloatingAssistiveBall(
     actions: List<FloatingAction>,
-    sortOrder: TopicSortOrder,
-    sortAscending: Boolean,
     initialXRatio: Float,
     initialYRatio: Float,
     onPositionChange: (Float, Float) -> Unit,
@@ -2014,62 +1466,52 @@ private fun FloatingAssistiveBall(
 
     val expandProgress by animateFloatAsState(
         targetValue = if (isExpanded) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = 0.68f,
-            stiffness = Spring.StiffnessMediumLow,
-        ),
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow),
         label = "expandProgress",
     )
-
     val isSingle = actions.size == 1
+    val fabShape = RoundedCornerShape(16.dp)
 
     BoxWithConstraints(modifier = modifier) {
         val density = LocalDensity.current
         val screenWidthPx = with(density) { maxWidth.toPx() }
         val screenHeightPx = with(density) { maxHeight.toPx() }
 
-        val mainBallSize = 52.dp
+        val mainBallSize = 56.dp
         val mainBallSizePx = with(density) { mainBallSize.toPx() }
 
-        // 自由拖拽安全边界：避开最顶部状态栏（32dp）与底栏（72dp），四周留 6dp 防切边
-        val minX = with(density) { 6.dp.toPx() }
-        val maxX = (screenWidthPx - mainBallSizePx - with(density) { 6.dp.toPx() }).coerceAtLeast(minX)
-        val minY = with(density) { 32.dp.toPx() }
-        val maxY = (screenHeightPx - mainBallSizePx - with(density) { 72.dp.toPx() }).coerceAtLeast(minY)
+        // 拖拽安全边界:上下左右各留出余量,按钮不会被裁切或压在底栏上。
+        val margin = with(density) { 12.dp.toPx() }
+        val minX = margin
+        val maxX = (screenWidthPx - mainBallSizePx - margin).coerceAtLeast(minX)
+        val minY = margin
+        val maxY = (screenHeightPx - mainBallSizePx - margin).coerceAtLeast(minY)
 
-        // 采用真实绝对物理像素坐标：手指拖到哪停在哪，完全消除相对基准点重置与强行吸附造成的乱跳
+        // 绝对像素坐标:手指拖到哪停在哪,不做强制吸附,避免松手跳位。
         var currentXPx by remember {
-            mutableFloatStateOf(
-                (minX + initialXRatio.coerceIn(0f, 1f) * (maxX - minX)).coerceIn(minX, maxX)
-            )
+            mutableFloatStateOf((minX + initialXRatio.coerceIn(0f, 1f) * (maxX - minX)).coerceIn(minX, maxX))
         }
         var currentYPx by remember {
-            mutableFloatStateOf(
-                (minY + initialYRatio.coerceIn(0f, 1f) * (maxY - minY)).coerceIn(minY, maxY)
-            )
+            mutableFloatStateOf((minY + initialYRatio.coerceIn(0f, 1f) * (maxY - minY)).coerceIn(minY, maxY))
         }
 
         val mainCenter = Offset(currentXPx + mainBallSizePx / 2f, currentYPx + mainBallSizePx / 2f)
-
-        // 四象限智能空间判定：
-        // 1. 水平方向：右半区朝左展开，左半区朝右展开
+        // 右半区朝左展开、左半区朝右展开;靠上时朝下展开,否则朝上。
         val isRightSide = mainCenter.x >= screenWidthPx / 2f
-        // 2. 垂直方向：上半区（上方不足 142dp+56dp）朝下展开，下半区朝上展开
-        val needExpandDownward = mainCenter.y < (with(density) { 142.dp.toPx() } + with(density) { 56.dp.toPx() })
+        val needExpandDownward = mainCenter.y < with(density) { 200.dp.toPx() }
 
-        // 静止淡出透明度：未交互时半透明（0.55f），触碰或展开时平滑升为 1.0f
+        // 静止时半透明,不抢内容的视线;触碰或展开时恢复不透明。
         val idleAlpha by animateFloatAsState(
-            targetValue = if (isExpanded || isDragging) 1f else 0.55f,
+            targetValue = if (isExpanded || isDragging) 1f else 0.88f,
             animationSpec = tween(250),
             label = "fabIdleAlpha",
         )
 
-        // 1. 全屏轻柔半透明蒙层（展开时淡出）
         if (expandProgress > 0.01f) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.26f * expandProgress))
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f * expandProgress))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -2078,69 +1520,11 @@ private fun FloatingAssistiveBall(
             )
         }
 
-        // 2. 触控涟漪光环（展开时从主球周围扩散出的淡蓝水纹圆环，参照设计图右侧）
-        if (expandProgress > 0.01f) {
-            val outerRadiusPx = with(density) { 38.dp.toPx() }
-            val innerRadiusPx = with(density) { 32.dp.toPx() }
-
-            // 外层水纹圆环
-            Box(
-                modifier = Modifier
-                    .offset {
-                        IntOffset(
-                            (mainCenter.x - outerRadiusPx).roundToInt(),
-                            (mainCenter.y - outerRadiusPx).roundToInt(),
-                        )
-                    }
-                    .size(76.dp)
-                    .border(
-                        width = 1.2.dp,
-                        color = Color(0xFF2196F3).copy(alpha = 0.22f * expandProgress),
-                        shape = CircleShape,
-                    ),
-            )
-            // 内层水纹圆环
-            Box(
-                modifier = Modifier
-                    .offset {
-                        IntOffset(
-                            (mainCenter.x - innerRadiusPx).roundToInt(),
-                            (mainCenter.y - innerRadiusPx).roundToInt(),
-                        )
-                    }
-                    .size(64.dp)
-                    .border(
-                        width = 1.4.dp,
-                        color = Color(0xFF2196F3).copy(alpha = 0.38f * expandProgress),
-                        shape = CircleShape,
-                    ),
-            )
-        }
-
-        // 3. 静止底晕（静止时主球周围有极浅的微蓝晕圈，柔和贴边，不突兀）
-        if (expandProgress < 0.05f) {
-            val haloRadiusPx = with(density) { 29.dp.toPx() }
-            Box(
-                modifier = Modifier
-                    .offset {
-                        IntOffset(
-                            (mainCenter.x - haloRadiusPx).roundToInt(),
-                            (mainCenter.y - haloRadiusPx).roundToInt(),
-                        )
-                    }
-                    .size(58.dp)
-                    .graphicsLayer { alpha = idleAlpha }
-                    .background(Color(0xFF2196F3).copy(alpha = 0.12f), CircleShape),
-            )
-        }
-
-        // 4. 展开的子按钮群（四象限智能朝向：右上向左下，右下向左上，左上向右下，左下向右上）
         if (!isSingle && expandProgress > 0.01f) {
-            val subRadiusPx = with(density) { 142.dp.toPx() } * expandProgress
-            val subBallSize = 42.dp
+            val subRadiusPx = with(density) { 132.dp.toPx() } * expandProgress
+            val subBallSize = 44.dp
             val subBallSizePx = with(density) { subBallSize.toPx() }
             val count = actions.size
-
             val startAngle = if (isRightSide) {
                 if (needExpandDownward) 184.0 else 84.0
             } else {
@@ -2158,7 +1542,7 @@ private fun FloatingAssistiveBall(
                 val subX = mainCenter.x + (subRadiusPx * cos(rad)).toFloat()
                 val subY = mainCenter.y - (subRadiusPx * sin(rad)).toFloat()
 
-                Box(
+                Column(
                     modifier = Modifier
                         .offset {
                             IntOffset(
@@ -2168,88 +1552,56 @@ private fun FloatingAssistiveBall(
                         }
                         .graphicsLayer {
                             alpha = expandProgress.coerceIn(0f, 1f)
-                            scaleX = 0.35f + 0.65f * expandProgress
-                            scaleY = 0.35f + 0.65f * expandProgress
+                            scaleX = 0.4f + 0.6f * expandProgress
+                            scaleY = 0.4f + 0.6f * expandProgress
                         },
-                    contentAlignment = Alignment.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    // 子按钮圆球
                     Box(
                         modifier = Modifier
                             .size(subBallSize)
-                            .shadow(elevation = 3.dp, shape = CircleShape, clip = false)
-                            .clip(CircleShape)
-                            .background(floatingActionColor(action))
-                            .border(1.2.dp, Color.White.copy(alpha = 0.45f), CircleShape)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) {
+                            .shadow(elevation = 3.dp, shape = RoundedCornerShape(12.dp), clip = false)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .clickable {
                                 isExpanded = false
                                 onActionClick(action)
                             },
                         contentAlignment = Alignment.Center,
                     ) {
-                        FloatingActionIcon(action = action, tint = Color.White, modifier = Modifier.size(19.dp))
+                        Icon(
+                            AppIcons.floatingAction(action),
+                            contentDescription = action.title,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(22.dp),
+                        )
                     }
-
-                    // 精致白底药丸标签（文字小巧上移，避免相互压盖与遮挡）
-                    Box(
-                        modifier = Modifier
-                            .offset(y = 21.dp)
-                            .shadow(elevation = 1.5.dp, shape = RoundedCornerShape(8.dp), clip = false)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.96f))
-                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 5.5.dp, vertical = 1.dp),
+                    Spacer(Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shadowElevation = 1.dp,
                     ) {
                         Text(
                             text = action.shortLabel,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 8.5.sp,
-                            fontWeight = FontWeight.Medium,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         )
                     }
                 }
             }
         }
 
-        // 5. 主悬浮球（采用绝对像素平移，松手直接驻留目标坐标，支持全屏幕自由拖放）
-        val ballRotation = expandProgress * 90f
-
+        val containerColor = if (isExpanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
+        val contentColor = if (isExpanded) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer
         Box(
             modifier = Modifier
-                .offset {
-                    IntOffset(currentXPx.roundToInt(), currentYPx.roundToInt())
-                }
+                .offset { IntOffset(currentXPx.roundToInt(), currentYPx.roundToInt()) }
                 .size(mainBallSize)
-                .graphicsLayer {
-                    alpha = idleAlpha
-                }
-                .shadow(elevation = if (isExpanded) 5.dp else 2.5.dp, shape = CircleShape, clip = false)
-                .clip(CircleShape)
-                .then(
-                    if (isSingle) {
-                        // 单功能直达：半透明浅色底 + 优雅微蓝细边，低调不突兀
-                        Modifier
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.92f))
-                            .border(1.dp, Color(0xFF2196F3).copy(alpha = 0.35f), CircleShape)
-                    } else if (isExpanded) {
-                        // 展开后主球：饱满纯净天蓝 + 纯白细边
-                        Modifier
-                            .background(Color(0xFF2196F3))
-                            .border(1.2.dp, Color.White.copy(alpha = 0.6f), CircleShape)
-                    } else {
-                        // 收缩静止态主球：半透明主题天蓝渐变底 + 柔和白边（完全融入内容流，不抢视线）
-                        Modifier
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(Color(0xFF42A5F5), Color(0xFF1E88E5)),
-                                ),
-                            )
-                            .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
-                    }
-                )
+                .graphicsLayer { alpha = idleAlpha }
+                .shadow(elevation = if (isExpanded) 8.dp else 6.dp, shape = fabShape, clip = false)
+                .clip(fabShape)
+                .background(containerColor)
                 .pointerInput(isSingle, actions) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
@@ -2265,11 +1617,7 @@ private fun FloatingAssistiveBall(
                                 change.consume()
                                 isDragging = false
                                 if (!hasMoved) {
-                                    if (isSingle) {
-                                        onActionClick(actions.first())
-                                    } else {
-                                        isExpanded = !isExpanded
-                                    }
+                                    if (isSingle) onActionClick(actions.first()) else isExpanded = !isExpanded
                                 } else {
                                     val finalXRatio = if (maxX > minX) ((currentXPx - minX) / (maxX - minX)).coerceIn(0f, 1f) else 0.5f
                                     val finalYRatio = if (maxY > minY) ((currentYPx - minY) / (maxY - minY)).coerceIn(0f, 1f) else 0.5f
@@ -2293,135 +1641,17 @@ private fun FloatingAssistiveBall(
                 },
             contentAlignment = Alignment.Center,
         ) {
-            if (isSingle) {
-                // 单功能展示：图标 + 下方小字
-                val singleAction = actions.first()
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    FloatingActionIcon(
-                        action = singleAction,
-                        tint = Color(0xFF2196F3),
-                        modifier = Modifier.size(19.dp),
-                    )
-                    Spacer(Modifier.height(1.dp))
-                    Text(
-                        text = singleAction.shortLabel,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium, fontSize = 9.sp),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            } else {
-                // 多功能主球：旋转动画，三条横线 ≡ 平滑过渡为 ×
-                Box(
-                    modifier = Modifier.graphicsLayer {
-                        rotationZ = ballRotation
-                    },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Canvas(Modifier.size(20.dp)) {
-                        scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-                            if (expandProgress > 0.5f) {
-                                // × 图标
-                                drawLine(Color.White, Offset(6.5f, 6.5f), Offset(17.5f, 17.5f), strokeWidth = 2.4f, cap = StrokeCap.Round)
-                                drawLine(Color.White, Offset(17.5f, 6.5f), Offset(6.5f, 17.5f), strokeWidth = 2.4f, cap = StrokeCap.Round)
-                            } else {
-                                // 三条横线 ≡（汉堡菜单，圆润纯白）
-                                drawLine(Color.White, Offset(5f, 7f), Offset(19f, 7f), strokeWidth = 2.2f, cap = StrokeCap.Round)
-                                drawLine(Color.White, Offset(5f, 12f), Offset(19f, 12f), strokeWidth = 2.2f, cap = StrokeCap.Round)
-                                drawLine(Color.White, Offset(5f, 17f), Offset(19f, 17f), strokeWidth = 2.2f, cap = StrokeCap.Round)
-                            }
-                        }
-                    }
-                }
+            val icon = when {
+                isSingle -> AppIcons.floatingAction(actions.first())
+                expandProgress > 0.5f -> Icons.Filled.Close
+                else -> Icons.Filled.Menu
             }
+            Icon(
+                icon,
+                contentDescription = if (isSingle) actions.first().title else "快捷操作",
+                tint = contentColor,
+                modifier = Modifier.graphicsLayer { rotationZ = if (isSingle) 0f else expandProgress * 90f },
+            )
         }
     }
 }
-
-/** 辅助悬浮按钮各功能的柔和雅致专属配色（低饱和度，对齐系统级设计图）。 */
-private fun floatingActionColor(action: FloatingAction): Color = when (action) {
-    FloatingAction.CreateTopic -> Color(0xFFF06A55) // 暖珊瑚西柚橙
-    FloatingAction.Sort -> Color(0xFF2196F3)        // 纯净主题天蓝
-    FloatingAction.Drafts -> Color(0xFF8C9BB0)      // 雅致灰紫蓝
-    FloatingAction.Search -> Color(0xFF68A398)      // 柔和灰海青
-    FloatingAction.Categories -> Color(0xFFEAA63B)  // 暖金琥珀
-}
-
-/** 辅助悬浮按钮各功能的纯矢量精致手绘图标。 */
-@Composable
-private fun FloatingActionIcon(
-    action: FloatingAction,
-    tint: Color,
-    modifier: Modifier = Modifier.size(20.dp),
-) {
-    Canvas(modifier) {
-        scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-            val stroke = Stroke(width = 2.1f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-            when (action) {
-                FloatingAction.CreateTopic -> {
-                    // 铅笔 ✏️
-                    val pen = Path().apply {
-                        moveTo(4f, 20f)
-                        lineTo(8.5f, 19f)
-                        lineTo(19.5f, 8f)
-                        lineTo(16f, 4.5f)
-                        lineTo(5f, 15.5f)
-                        close()
-                    }
-                    drawPath(pen, tint, style = stroke)
-                    drawLine(tint, Offset(13.5f, 7f), Offset(17f, 10.5f), strokeWidth = 1.9f, cap = StrokeCap.Round)
-                    drawLine(tint, Offset(12.5f, 20f), Offset(20f, 20f), strokeWidth = 1.9f, cap = StrokeCap.Round)
-                }
-                FloatingAction.Sort -> {
-                    // 垂直双向箭头 ⇅
-                    drawLine(tint, Offset(8f, 18.5f), Offset(8f, 5.5f), strokeWidth = 2.1f, cap = StrokeCap.Round)
-                    val leftArrow = Path().apply {
-                        moveTo(4.5f, 9.5f)
-                        lineTo(8f, 5.5f)
-                        lineTo(11.5f, 9.5f)
-                    }
-                    drawPath(leftArrow, tint, style = stroke)
-
-                    drawLine(tint, Offset(16f, 5.5f), Offset(16f, 18.5f), strokeWidth = 2.1f, cap = StrokeCap.Round)
-                    val rightArrow = Path().apply {
-                        moveTo(12.5f, 14.5f)
-                        lineTo(16f, 18.5f)
-                        lineTo(19.5f, 14.5f)
-                    }
-                    drawPath(rightArrow, tint, style = stroke)
-                }
-                FloatingAction.Drafts -> {
-                    // 文件夹 📁
-                    val folder = Path().apply {
-                        moveTo(3.5f, 7f)
-                        lineTo(8.5f, 7f)
-                        lineTo(10.5f, 9.5f)
-                        lineTo(20.5f, 9.5f)
-                        lineTo(20.5f, 18.5f)
-                        lineTo(3.5f, 18.5f)
-                        close()
-                    }
-                    drawPath(folder, tint, style = stroke)
-                    drawLine(tint, Offset(3.5f, 10.5f), Offset(20.5f, 10.5f), strokeWidth = 1.6f, cap = StrokeCap.Round)
-                }
-                FloatingAction.Search -> {
-                    // 放大镜 🔍
-                    drawCircle(tint, 5.5f, Offset(10.5f, 10.5f), style = stroke)
-                    drawLine(tint, Offset(14.8f, 14.8f), Offset(20f, 20f), strokeWidth = 2.3f, cap = StrokeCap.Round)
-                }
-                FloatingAction.Categories -> {
-                    // 分类板块 🗂（4 个圆角小卡片）
-                    val r = 1.5f
-                    drawRoundRect(tint, Offset(4.5f, 4.5f), Size(6.5f, 6.5f), CornerRadius(r, r), style = stroke)
-                    drawRoundRect(tint, Offset(13f, 4.5f), Size(6.5f, 6.5f), CornerRadius(r, r), style = stroke)
-                    drawRoundRect(tint, Offset(4.5f, 13f), Size(6.5f, 6.5f), CornerRadius(r, r), style = stroke)
-                    drawRoundRect(tint, Offset(13f, 13f), Size(6.5f, 6.5f), CornerRadius(r, r), style = stroke)
-                }
-            }
-        }
-    }
-}
-
-

@@ -345,6 +345,7 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
     val syncReadProgress by viewModel.reading.syncEnabled.collectAsStateWithLifecycle()
     val themeMode by viewModel.settings.themeMode.collectAsStateWithLifecycle()
     val updateState by viewModel.updates.state.collectAsStateWithLifecycle()
+    val dynamicColorPref by viewModel.settings.dynamicColor.collectAsStateWithLifecycle()
     val autoRefreshIncoming by viewModel.settings.autoRefreshIncoming.collectAsStateWithLifecycle()
     val autoRefreshInterval by viewModel.settings.autoRefreshInterval.collectAsStateWithLifecycle()
     val backgroundNotification by viewModel.settings.backgroundNotification.collectAsStateWithLifecycle()
@@ -670,6 +671,8 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
                                 onBack = { stack.pop() },
                                 themeMode = themeMode,
                                 onThemeMode = viewModel.settings::setThemeMode,
+                                dynamicColor = dynamicColorPref,
+                                onDynamicColor = viewModel.settings::setDynamicColor,
                                 floatingBallEnabled = floatingBallEnabled,
                                 onFloatingBallEnabled = viewModel.settings::setFloatingBallEnabled,
                                 floatingBallActions = floatingBallActions,
