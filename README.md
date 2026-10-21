@@ -72,7 +72,7 @@
 ## 📥 最新版本下载
 
 - **当前版本**：`v1.3.0`
-- **APK 下载**：[前往 Releases 下载 `linuxdo-1.3.0-release.apk`](https://github.com/xuemk/linuxdo-release/releases/latest)
+- **APK 下载**：[前往 Releases 下载 `linuxdo-1.3.0-release.apk`](https://github.com/smhjw/linuxdo-android-hjw/releases/latest)
 
 > [!CAUTION]
 > <span style="color: #ff3b30;">**P.S. 设置中的「同步楼层与阅读时长」开关默认关闭，需要增加阅读时长的用户可自行开启（可能触发掉盾）**</span>
