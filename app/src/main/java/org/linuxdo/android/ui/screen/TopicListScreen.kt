@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui.screen
 
+import org.linuxdo.android.ui.design.*
+import androidx.compose.material3.MaterialTheme
+
 import org.linuxdo.android.data.TopicPage
 import org.linuxdo.android.data.TopicNotificationLevel
 import org.linuxdo.android.data.PostFlagReason
@@ -119,12 +122,11 @@ import org.linuxdo.android.data.Topic
 import org.linuxdo.android.data.TopicSortOrder
 import org.linuxdo.android.data.HomeFeedType
 import org.linuxdo.android.data.TopicListItem
-import org.linuxdo.android.ui.design.IosActivityIndicator
-import org.linuxdo.android.ui.design.IosDivider
-import org.linuxdo.android.ui.design.IosLargeTitleScaffold
-import org.linuxdo.android.ui.design.IosLoadingBox
-import org.linuxdo.android.ui.design.IosMetrics
-import org.linuxdo.android.ui.design.IosTheme
+import org.linuxdo.android.ui.design.LoadingIndicator
+import org.linuxdo.android.ui.design.ListDivider
+import org.linuxdo.android.ui.design.AppScaffold
+import org.linuxdo.android.ui.design.LoadingBox
+import org.linuxdo.android.ui.design.Dimens
 import org.linuxdo.android.ui.design.UserAvatar
 import org.linuxdo.android.ui.design.avatarShape
 import org.linuxdo.android.ui.format.RelativeTime
@@ -259,47 +261,24 @@ fun TopicListScreen(
                 Box(
                     Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = IosMetrics.navBarHeight + 10.dp)
+                        .padding(top = Dimens.navBarHeight + 10.dp)
                         .graphicsLayer {
                             alpha = if (state.refreshing) 1f else min(1f, fraction * 1.4f)
                         },
                 ) {
-                    IosActivityIndicator(diameter = 22.dp)
+                    LoadingIndicator(diameter = 22.dp)
                 }
             }
         },
     ) {
-        IosLargeTitleScaffold(
+        AppScaffold(
             title = title,
             listState = listState,
             onBack = onBack,
-            compactTop = onBack == null,
+            showLargeTitle = onBack != null && !hasCategoryDropdown,
             scrollToTopRequest = scrollToTopRequest,
-            trailing = trailing,
-            customLargeTitle = when {
-                currentFeed != null && onFeedSelect != null -> {
-                    {
-                        HomeFeedTitleBar(
-                            currentFeed = currentFeed,
-                            onFeedSelect = onFeedSelect,
-                            trailing = trailing,
-                        )
-                    }
-                }
-                hasCategoryDropdown -> {
-                    {
-                        CategoryVariantSelector(
-                            title = title,
-                            variants = categoryVariants,
-                            currentCategoryId = currentCategoryId,
-                            collapsed = false,
-                            onSelect = { onSelectCategoryVariant?.invoke(it) },
-                        )
-                    }
-                }
-                else -> null
-            },
-            customCollapsedTitle = when {
+            trailing = { trailing() },
+            customTitle = when {
                 currentFeed != null && onFeedSelect != null -> {
                     {
                         HomeFeedCollapsedBar(
@@ -328,7 +307,7 @@ fun TopicListScreen(
                     exit = fadeOut(tween(150)) + slideOutVertically(tween(200)) { -it },
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = if (onBack == null) 58.dp else IosMetrics.navBarHeight + 8.dp),
+                        .padding(top = 8.dp),
                 ) {
                     IncomingTopicsBanner(
                         count = state.incomingTopicIds.size,
@@ -391,15 +370,15 @@ fun TopicListScreen(
                 noticeToast?.let { notice ->
                     Text(
                         notice,
-                        style = IosTheme.type.footnote,
-                        color = Color(0xFF30B85B),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AppTheme.colors.success,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(horizontal = 16.dp, vertical = 22.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(IosTheme.colors.card)
-                            .border(1.dp, Color(0xFF34C759).copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .border(1.dp, AppTheme.colors.success.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                     )
                 }
@@ -409,7 +388,7 @@ fun TopicListScreen(
                 item(key = "error") { ErrorNotice(message, onRefresh) }
             }
             if (state.initialLoading && state.items.isEmpty()) {
-                item(key = "loading") { IosLoadingBox() }
+                item(key = "loading") { LoadingBox() }
             }
             if (!state.initialLoading && state.items.isEmpty() && state.error == null) {
                 item(key = "empty") { EmptyNotice() }
@@ -431,7 +410,7 @@ fun TopicListScreen(
                         onBookmark = bookmarkTopicAction,
                         onFlag = flagTopicAction,
                     )
-                    IosDivider(startIndent = IosMetrics.screenPadding)
+                    ListDivider(startIndent = Dimens.screenPadding)
                 }
             }
 
@@ -455,13 +434,13 @@ fun TopicListScreen(
                         onClick = { onOpenTopic(item.topic) },
                     )
                     if (index < plainItems.lastIndex) {
-                        IosDivider(startIndent = IosMetrics.screenPadding)
+                        ListDivider(startIndent = Dimens.screenPadding)
                     }
                 }
             }
 
             if (state.loadingMore) {
-                item(key = "load-more") { IosLoadingBox() }
+                item(key = "load-more") { LoadingBox() }
             }
         }
     }
@@ -503,8 +482,8 @@ fun TopicListScreen(
 /** 列表右下角创建新话题悬浮按钮（笔状图标，与详情页回复按钮风格一致）。 */
 @Composable
 private fun CreateTopicFab(onClick: () -> Unit) {
-    val tintColor = IosTheme.colors.accent
-    val bgBase = IosTheme.colors.card.copy(alpha = 0.95f)
+    val tintColor = MaterialTheme.colorScheme.primary
+    val bgBase = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f)
     val bgTint = tintColor.copy(alpha = 0.12f)
     val borderColor = tintColor.copy(alpha = 0.28f)
     Box(
@@ -546,10 +525,10 @@ private fun TopicSortFab(
     onClick: () -> Unit,
 ) {
     val isDefault = sortOrder == TopicSortOrder.Default
-    val activeColor = IosTheme.colors.accent
-    val tintColor = if (isDefault) IosTheme.colors.secondaryLabel else activeColor
-    val bgBase = IosTheme.colors.card.copy(alpha = 0.94f)
-    val borderColor = if (isDefault) IosTheme.colors.separator.copy(alpha = 0.4f) else activeColor.copy(alpha = 0.45f)
+    val activeColor = MaterialTheme.colorScheme.primary
+    val tintColor = if (isDefault) MaterialTheme.colorScheme.onSurfaceVariant else activeColor
+    val bgBase = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.94f)
+    val borderColor = if (isDefault) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f) else activeColor.copy(alpha = 0.45f)
 
     Box(
         Modifier
@@ -713,8 +692,8 @@ private fun TopicSortDialog(
             modifier = Modifier
                 .widthIn(min = 280.dp, max = 320.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(IosTheme.colors.card)
-                .border(0.6.dp, IosTheme.colors.separator.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .border(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
                 .padding(vertical = 6.dp),
         ) {
             // 顶部 Header: ≡ 排序：默认   ^
@@ -727,7 +706,7 @@ private fun TopicSortDialog(
             ) {
                 TopicSortIcon(
                     order = currentOrder,
-                    tint = IosTheme.colors.label,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(19.dp),
                 )
                 Spacer(Modifier.width(12.dp))
@@ -736,8 +715,8 @@ private fun TopicSortDialog(
                 } else ""
                 Text(
                     text = "排序：${currentOrder.label}$sortSuffix",
-                    style = IosTheme.type.headline.copy(fontWeight = FontWeight.SemiBold),
-                    color = IosTheme.colors.label,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
                 // 向上折叠指示符 ^
@@ -751,17 +730,17 @@ private fun TopicSortDialog(
                 }
             }
 
-            IosDivider(startIndent = 14.dp, modifier = Modifier.padding(end = 14.dp))
+            ListDivider(startIndent = 14.dp, modifier = Modifier.padding(end = 14.dp))
 
             // 7 个排序条目
             TopicSortOrder.entries.forEach { order ->
                 val isSelected = order == currentOrder
-                val itemColor = if (isSelected) IosTheme.colors.accent else IosTheme.colors.label
+                val itemColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onSelectOrder(order) }
-                        .background(if (isSelected) IosTheme.colors.accent.copy(alpha = 0.08f) else Color.Transparent)
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent)
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -773,7 +752,7 @@ private fun TopicSortDialog(
                     Spacer(Modifier.width(14.dp))
                     Text(
                         text = order.label,
-                        style = IosTheme.type.body.copy(
+                        style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                         ),
                         color = itemColor,
@@ -783,7 +762,7 @@ private fun TopicSortDialog(
                         if (order != TopicSortOrder.Default) {
                             Text(
                                 text = if (ascending) "↑ 升序" else "↓ 降序",
-                                style = IosTheme.type.caption.copy(fontWeight = FontWeight.Medium),
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
                                 color = itemColor,
                                 modifier = Modifier.padding(end = 8.dp),
                             )
@@ -821,7 +800,7 @@ private fun NotificationLevelMenu(
     DropdownMenu(
         expanded = true,
         onDismissRequest = onDismiss,
-        modifier = Modifier.background(IosTheme.colors.card),
+        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
         if (onPick != null) {
             val current = currentLevel ?: TopicNotificationLevel.Regular
@@ -829,7 +808,7 @@ private fun NotificationLevelMenu(
                 val isSelected = level == current
                 DropdownMenuItem(
                     enabled = !updating,
-                    modifier = if (isSelected) Modifier.background(IosTheme.colors.accent.copy(alpha = 0.12f)) else Modifier,
+                    modifier = if (isSelected) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)) else Modifier,
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TopicNotificationIcon(level, modifier = Modifier.size(16.dp))
@@ -837,11 +816,11 @@ private fun NotificationLevelMenu(
                             Text(
                                 text = level.title,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) IosTheme.colors.accent else IosTheme.colors.label,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             )
                             if (isSelected) {
                                 Spacer(Modifier.width(8.dp))
-                                Text("✓", color = IosTheme.colors.accent, fontWeight = FontWeight.Bold)
+                                Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                             }
                         }
                     },
@@ -854,7 +833,7 @@ private fun NotificationLevelMenu(
         }
         val hasExtraActions = onCopyLink != null || onBookmark != null || onFlag != null
         if (onPick != null && hasExtraActions) {
-            IosDivider()
+            ListDivider()
         }
         if (onCopyLink != null) {
             DropdownMenuItem(
@@ -862,7 +841,7 @@ private fun NotificationLevelMenu(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         PostActionIcon(PostAction.CopyLink, false, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("复制链接", color = IosTheme.colors.label)
+                        Text("复制链接", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 onClick = {
@@ -877,7 +856,7 @@ private fun NotificationLevelMenu(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         PostActionIcon(PostAction.Bookmark, false, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("添加书签", color = IosTheme.colors.label)
+                        Text("添加书签", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 onClick = {
@@ -892,7 +871,7 @@ private fun NotificationLevelMenu(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         PostActionIcon(PostAction.Flag, false, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("举报", color = IosTheme.colors.label)
+                        Text("举报", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 onClick = {
@@ -926,7 +905,7 @@ private fun pinnedPrefixGroups(
 @Composable
 private fun topicRowBackground(isHighlighted: Boolean): Color {
     val background by animateColorAsState(
-        targetValue = if (isHighlighted) IosTheme.colors.accent.copy(alpha = 0.12f) else IosTheme.colors.card,
+        targetValue = if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceContainerLow,
         animationSpec = tween(if (isHighlighted) 100 else 450), label = "topic-highlight",
     )
     return background
@@ -962,7 +941,7 @@ fun PinnedGroupCard(
         Modifier
             .fillMaxWidth()
             .background(rowBackground)
-            .padding(horizontal = IosMetrics.screenPadding, vertical = 10.dp),
+            .padding(horizontal = Dimens.screenPadding, vertical = 10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -976,8 +955,8 @@ fun PinnedGroupCard(
                 Spacer(Modifier.width(6.dp))
                 Text(
                     text = head.displayName.ifBlank { "匿名" },
-                    style = IosTheme.type.footnote,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -989,20 +968,20 @@ fun PinnedGroupCard(
             }
             Text(
                 text = "置顶 ${items.size}",
-                style = IosTheme.type.footnote,
-                color = IosTheme.colors.secondaryLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         items.forEach { entry ->
             Spacer(Modifier.height(6.dp))
             Box {
                 Text(
-                    text = titleWithBadges(entry.topic, IosTheme.colors.accent),
-                    style = IosTheme.type.body,
-                    color = IosTheme.colors.label,
+                    text = titleWithBadges(entry.topic, MaterialTheme.colorScheme.primary),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    inlineContent = unseenDotContent(IosTheme.colors.accent),
+                    inlineContent = unseenDotContent(MaterialTheme.colorScheme.primary),
                     modifier = Modifier
                         .fillMaxWidth()
                         .combinedClickable(
@@ -1062,7 +1041,7 @@ fun TopicRow(
     )
     val rowBackground = topicRowBackground(isHighlighted)
     val needle = query?.trim().orEmpty()
-    val accent = IosTheme.colors.accent
+    val accent = MaterialTheme.colorScheme.primary
     val excerpt = remember(topic.id, topic.excerpt, needle, accent) {
         val raw = topic.excerpt?.let { Jsoup.parseBodyFragment(it).text().trim() }?.takeIf { it.isNotEmpty() }
         if (raw.isNullOrBlank()) null
@@ -1091,7 +1070,7 @@ fun TopicRow(
                             onReveal(false)
                             onSetNotificationLevel(level)
                         }, contentAlignment = Alignment.Center) {
-                        Text(level.badgeLabel, style = IosTheme.type.footnote, color = Color.White)
+                        Text(level.badgeLabel, style = MaterialTheme.typography.bodySmall, color = Color.White)
                     }
                 }
             }
@@ -1122,7 +1101,7 @@ fun TopicRow(
                     { onReveal(false); showLevelMenu = true }
                 } else null,
             )
-            .padding(horizontal = IosMetrics.screenPadding, vertical = 10.dp),
+            .padding(horizontal = Dimens.screenPadding, vertical = 10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // 作者区整体吃掉除分类外的全部宽度,分类才能稳定贴住右边界 ——
@@ -1142,8 +1121,8 @@ fun TopicRow(
                 Spacer(Modifier.width(6.dp))
                 Text(
                     text = item.displayName.ifBlank { "匿名" },
-                    style = IosTheme.type.footnote,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -1177,19 +1156,19 @@ fun TopicRow(
         Row {
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = titleWithBadges(topic, IosTheme.colors.accent, query),
-                    style = IosTheme.type.body,
-                    color = IosTheme.colors.label,
+                    text = titleWithBadges(topic, MaterialTheme.colorScheme.primary, query),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    inlineContent = unseenDotContent(IosTheme.colors.accent),
+                    inlineContent = unseenDotContent(MaterialTheme.colorScheme.primary),
                 )
                 excerpt?.let { text ->
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = text,
-                        style = IosTheme.type.footnote,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = if (query.isNullOrBlank()) 2 else 3,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -1204,7 +1183,7 @@ fun TopicRow(
                     modifier = Modifier
                         .size(width = 72.dp, height = 54.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(IosTheme.colors.fieldBackground),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 )
             }
         }
@@ -1217,12 +1196,12 @@ fun TopicRow(
             }
             Spacer(Modifier.width(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ClockGlyph(IosTheme.colors.tertiaryLabel)
+                ClockGlyph(MaterialTheme.colorScheme.outline)
                 Spacer(Modifier.width(3.dp))
                 Text(
                     text = RelativeTime.format(topic.bumpedAt ?: topic.lastPostedAt ?: topic.createdAt),
-                    style = IosTheme.type.caption,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
             }
@@ -1246,7 +1225,7 @@ private data class LevelPalette(
 
 private val RAINBOW = listOf(
     Color(0xFFFF4D6D), Color(0xFFFF9F1C), Color(0xFFFFD60A),
-    Color(0xFF34C759), Color(0xFF0A84FF), Color(0xFFAF52DE),
+    Color(0xFF34C759), Color(0xFF007AFF), Color(0xFFAF52DE),
 )
 
 /**
@@ -1259,7 +1238,7 @@ private val RAINBOW = listOf(
  */
 @Composable
 private fun LevelBadge(level: Int) {
-    val isDark = IosTheme.colors.isDark
+    val isDark = AppTheme.isDark
     val shape = RoundedCornerShape(4.dp)
     val palette = when {
         level >= 4 -> LevelPalette(
@@ -1344,11 +1323,11 @@ private fun TagChip(tag: String) {
         text = tag,
         fontSize = 10.sp,
         lineHeight = 12.sp,
-        color = IosTheme.colors.secondaryLabel,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         maxLines = 1,
         modifier = Modifier
             .clip(RoundedCornerShape(4.dp))
-            .background(IosTheme.colors.fieldBackground)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .padding(horizontal = 5.dp, vertical = 1.dp),
     )
 }
@@ -1360,14 +1339,14 @@ private fun TagChip(tag: String) {
  */
 @Composable
 private fun MetaStat(value: String, textWidth: Dp, glyph: @Composable (Color) -> Unit) {
-    val color = IosTheme.colors.tertiaryLabel
+    val color = MaterialTheme.colorScheme.outline
     Row(verticalAlignment = Alignment.CenterVertically) {
         glyph(color)
         Spacer(Modifier.width(3.dp))
         Text(
             text = value,
-            style = IosTheme.type.caption.copy(fontFeatureSettings = "tnum"),
-            color = IosTheme.colors.secondaryLabel,
+            style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             modifier = Modifier.width(textWidth),
         )
@@ -1492,13 +1471,13 @@ internal fun CategoryTag(category: Category, prominent: Boolean = false) {
             Modifier
                 .size(8.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(parseCategoryColor(category.color) ?: IosTheme.colors.tertiaryLabel),
+                .background(parseCategoryColor(category.color) ?: MaterialTheme.colorScheme.outline),
         )
         Spacer(Modifier.width(4.dp))
         Text(
             text = category.name,
-            style = if (prominent) IosTheme.type.body else IosTheme.type.footnote,
-            color = if (prominent) IosTheme.colors.label else IosTheme.colors.secondaryLabel,
+            style = if (prominent) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodySmall,
+            color = if (prominent) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
         )
     }
@@ -1509,19 +1488,19 @@ internal fun ErrorNotice(message: String, onRetry: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = IosMetrics.screenPadding, vertical = 20.dp),
+            .padding(horizontal = Dimens.screenPadding, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
             text = message,
-            style = IosTheme.type.subheadline,
-            color = IosTheme.colors.secondaryLabel,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = "重试",
-            style = IosTheme.type.body,
-            color = IosTheme.colors.accent,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
                 .clickable(onClick = onRetry)
@@ -1538,8 +1517,8 @@ internal fun EmptyNotice() {
     ) {
         Text(
             text = "这里还没有内容",
-            style = IosTheme.type.subheadline,
-            color = IosTheme.colors.tertiaryLabel,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline,
         )
     }
 }
@@ -1549,60 +1528,6 @@ fun parseCategoryColor(hex: String?): Color? {
     val cleaned = hex?.removePrefix("#")?.trim() ?: return null
     if (cleaned.length != 6) return null
     return runCatching { Color(cleaned.toLong(16) or 0xFF000000L) }.getOrNull()
-}
-
-@Composable
-private fun HomeFeedTitleBar(
-    currentFeed: HomeFeedType,
-    onFeedSelect: (HomeFeedType) -> Unit,
-    trailing: @Composable () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IosMetrics.largeTitleHeight)
-            .padding(bottom = 4.dp),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            HomeFeedType.entries.forEach { feed ->
-                val selected = feed == currentFeed
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable { onFeedSelect(feed) }
-                        .padding(horizontal = 2.dp, vertical = 2.dp),
-                ) {
-                    Text(
-                        text = feed.label,
-                        fontSize = if (selected) 21.sp else 16.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selected) IosTheme.colors.label else IosTheme.colors.secondaryLabel,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    if (selected) {
-                        Box(
-                            modifier = Modifier
-                                .width(18.dp)
-                                .height(3.dp)
-                                .clip(RoundedCornerShape(1.5.dp))
-                                .background(IosTheme.colors.accent),
-                        )
-                    } else {
-                        Spacer(Modifier.height(3.dp))
-                    }
-                }
-            }
-        }
-        trailing()
-    }
 }
 
 @Composable
@@ -1627,7 +1552,7 @@ private fun HomeFeedCollapsedBar(
                     text = feed.label,
                     fontSize = if (selected) 16.sp else 14.sp,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (selected) IosTheme.colors.label else IosTheme.colors.secondaryLabel,
+                    color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(2.dp))
                 if (selected) {
@@ -1636,7 +1561,7 @@ private fun HomeFeedCollapsedBar(
                             .width(16.dp)
                             .height(2.5.dp)
                             .clip(RoundedCornerShape(1.25.dp))
-                            .background(IosTheme.colors.accent),
+                            .background(MaterialTheme.colorScheme.primary),
                     )
                 } else {
                     Spacer(Modifier.height(2.5.dp))
@@ -1668,7 +1593,7 @@ private fun CategoryVariantSelector(
         ?: CATEGORY_LEVEL_REGEX.find(title)?.groupValues?.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 3)
         ?: 0
     val baseTitle = categoryBaseNameOf(currentCategory?.name ?: title)
-    val isDark = IosTheme.colors.isDark
+    val isDark = AppTheme.isDark
 
     val (pillBg, pillBorder, pillText) = levelPillColors(currentLevel, isDark)
 
@@ -1687,11 +1612,11 @@ private fun CategoryVariantSelector(
             Text(
                 text = baseTitle,
                 style = if (collapsed) {
-                    IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold)
+                    MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                 } else {
-                    IosTheme.type.largeTitle
+                    MaterialTheme.typography.headlineSmall
                 },
-                color = IosTheme.colors.label,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1709,7 +1634,7 @@ private fun CategoryVariantSelector(
             ) {
                 Text(
                     text = "Lv.$currentLevel",
-                    style = IosTheme.type.caption.copy(
+                    style = MaterialTheme.typography.labelMedium.copy(
                         fontSize = if (collapsed) 11.sp else 12.sp,
                         fontWeight = FontWeight.Bold,
                     ),
@@ -1726,7 +1651,7 @@ private fun CategoryVariantSelector(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            containerColor = IosTheme.colors.card,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             shape = RoundedCornerShape(14.dp),
         ) {
             variants.forEachIndexed { idx, variant ->
@@ -1741,7 +1666,7 @@ private fun CategoryVariantSelector(
                             onSelect(variant)
                         }
                         .background(
-                            if (selected) IosTheme.colors.accent.copy(alpha = 0.08f) else Color.Transparent,
+                            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent,
                         )
                         .padding(horizontal = 14.dp, vertical = 11.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1750,14 +1675,14 @@ private fun CategoryVariantSelector(
                         Modifier
                             .size(8.dp)
                             .clip(RoundedCornerShape(2.dp))
-                            .background(parseCategoryColor(variant.color) ?: IosTheme.colors.tertiaryLabel),
+                            .background(parseCategoryColor(variant.color) ?: MaterialTheme.colorScheme.outline),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = categoryBaseNameOf(variant.name),
-                        style = IosTheme.type.subheadline,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (selected) IosTheme.colors.accent else IosTheme.colors.label,
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(Modifier.width(8.dp))
                     Box(
@@ -1769,7 +1694,7 @@ private fun CategoryVariantSelector(
                     ) {
                         Text(
                             text = "Lv.$level",
-                            style = IosTheme.type.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
                             color = itemText,
                         )
                     }
@@ -1778,20 +1703,20 @@ private fun CategoryVariantSelector(
                     if (selected) {
                         Text(
                             text = "✓",
-                            style = IosTheme.type.subheadline,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = IosTheme.colors.accent,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     } else if (variant.topicCount > 0) {
                         Text(
                             text = "${variant.topicCount}",
-                            style = IosTheme.type.caption,
-                            color = IosTheme.colors.tertiaryLabel,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline,
                         )
                     }
                 }
                 if (idx < variants.lastIndex) {
-                    IosDivider(startIndent = 14.dp)
+                    ListDivider(startIndent = 14.dp)
                 }
             }
         }
@@ -1860,8 +1785,8 @@ fun IncomingTopicsBanner(
                 ambientColor = Color(0x22007AFF),
             )
             .clip(RoundedCornerShape(22.dp))
-            .background(IosTheme.colors.card)
-            .border(1.dp, IosTheme.colors.accent.copy(alpha = 0.35f), RoundedCornerShape(22.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), RoundedCornerShape(22.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center,
@@ -1870,14 +1795,15 @@ fun IncomingTopicsBanner(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
+            val dotColor = MaterialTheme.colorScheme.primary
             Canvas(modifier = Modifier.size(7.dp)) {
-                drawCircle(color = Color(0xFF007AFF))
+                drawCircle(color = dotColor)
             }
             Spacer(Modifier.width(8.dp))
             Text(
                 text = "有 $count 条新话题动态，点击查看 ↑",
-                style = IosTheme.type.footnote,
-                color = IosTheme.colors.accent,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
             )
         }
@@ -1896,7 +1822,7 @@ fun TopicNotificationLevelTag(
         Spacer(Modifier.width(5.dp))
         Text(
             text = level.badgeLabel,
-            style = IosTheme.type.footnote,
+            style = MaterialTheme.typography.bodySmall,
             color = color,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
@@ -1904,11 +1830,12 @@ fun TopicNotificationLevelTag(
     }
 }
 
+@Composable
 private fun notificationLevelColor(level: TopicNotificationLevel): Color = when (level) {
-    TopicNotificationLevel.Watching -> Color(0xFF007AFF)
-    TopicNotificationLevel.Tracking -> Color(0xFF34C759)
-    TopicNotificationLevel.Regular -> Color(0xFF8E8E93)
-    TopicNotificationLevel.Muted -> Color(0xFFFF3B30)
+    TopicNotificationLevel.Watching -> MaterialTheme.colorScheme.primary
+    TopicNotificationLevel.Tracking -> AppTheme.colors.success
+    TopicNotificationLevel.Regular -> MaterialTheme.colorScheme.outline
+    TopicNotificationLevel.Muted -> MaterialTheme.colorScheme.error
 }
 
 @Composable
@@ -1952,20 +1879,20 @@ private fun TopicFlagDialog(
             modifier = Modifier
                 .widthIn(min = 280.dp, max = 360.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 "举报话题",
-                style = IosTheme.type.headline,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = IosTheme.colors.label,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 topic.title,
-                style = IosTheme.type.footnote,
-                color = IosTheme.colors.secondaryLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1976,7 +1903,7 @@ private fun TopicFlagDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) IosTheme.colors.fieldBackground else Color.Transparent)
+                            .background(if (isSelected) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent)
                             .clickable(enabled = !submitting) { selectedReason = reason }
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -1986,7 +1913,7 @@ private fun TopicFlagDialog(
                                 .size(16.dp)
                                 .border(
                                     1.5.dp,
-                                    if (isSelected) IosTheme.colors.accent else IosTheme.colors.tertiaryLabel,
+                                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                                     CircleShape,
                                 ),
                             contentAlignment = Alignment.Center,
@@ -1995,14 +1922,14 @@ private fun TopicFlagDialog(
                                 Box(
                                     modifier = Modifier
                                         .size(8.dp)
-                                        .background(IosTheme.colors.accent, CircleShape),
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape),
                                 )
                             }
                         }
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(reason.title, style = IosTheme.type.subheadline, fontWeight = FontWeight.Medium)
-                            Text(reason.description, style = IosTheme.type.caption, color = IosTheme.colors.secondaryLabel)
+                            Text(reason.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                            Text(reason.description, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -2013,22 +1940,22 @@ private fun TopicFlagDialog(
                     value = customMessage,
                     enabled = !submitting,
                     onValueChange = { customMessage = it },
-                    textStyle = IosTheme.type.subheadline.copy(color = IosTheme.colors.label),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(72.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(IosTheme.colors.fieldBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .padding(8.dp),
                     decorationBox = { innerTextField ->
                         if (customMessage.isEmpty()) {
-                            Text("请详细说明需要版主处理的问题...", style = IosTheme.type.subheadline, color = IosTheme.colors.tertiaryLabel)
+                            Text("请详细说明需要版主处理的问题...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
                         }
                         innerTextField()
                     },
                 )
             }
-            error?.let { Text(it, style = IosTheme.type.footnote, color = IosTheme.colors.destructive) }
+            error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -2039,11 +1966,11 @@ private fun TopicFlagDialog(
                         .weight(1f)
                         .height(40.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(IosTheme.colors.fieldBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .clickable(enabled = !submitting, onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("取消", style = IosTheme.type.subheadline, color = IosTheme.colors.secondaryLabel)
+                    Text("取消", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 val canSubmit = !submitting && (!selectedReason.requiresMessage || customMessage.isNotBlank())
                 Box(
@@ -2051,7 +1978,7 @@ private fun TopicFlagDialog(
                         .weight(1f)
                         .height(40.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (canSubmit) IosTheme.colors.accent else IosTheme.colors.accent.copy(alpha = 0.4f))
+                        .background(if (canSubmit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                         .clickable(enabled = canSubmit) {
                             onSubmit(selectedReason.id, customMessage.trim().takeIf { selectedReason.requiresMessage })
                         },
@@ -2059,7 +1986,7 @@ private fun TopicFlagDialog(
                 ) {
                     Text(
                         if (submitting) "提交中…" else "提交",
-                        style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = Color.White,
                     )
                 }
@@ -2272,13 +2199,13 @@ private fun FloatingAssistiveBall(
                             .offset(y = 21.dp)
                             .shadow(elevation = 1.5.dp, shape = RoundedCornerShape(8.dp), clip = false)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(IosTheme.colors.card.copy(alpha = 0.96f))
-                            .border(0.5.dp, IosTheme.colors.separator.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.96f))
+                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
                             .padding(horizontal = 5.5.dp, vertical = 1.dp),
                     ) {
                         Text(
                             text = action.shortLabel,
-                            color = IosTheme.colors.label,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 8.5.sp,
                             fontWeight = FontWeight.Medium,
                         )
@@ -2305,7 +2232,7 @@ private fun FloatingAssistiveBall(
                     if (isSingle) {
                         // 单功能直达：半透明浅色底 + 优雅微蓝细边，低调不突兀
                         Modifier
-                            .background(IosTheme.colors.card.copy(alpha = 0.92f))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.92f))
                             .border(1.dp, Color(0xFF2196F3).copy(alpha = 0.35f), CircleShape)
                     } else if (isExpanded) {
                         // 展开后主球：饱满纯净天蓝 + 纯白细边
@@ -2381,8 +2308,8 @@ private fun FloatingAssistiveBall(
                     Spacer(Modifier.height(1.dp))
                     Text(
                         text = singleAction.shortLabel,
-                        style = IosTheme.type.caption.copy(fontWeight = FontWeight.Medium, fontSize = 9.sp),
-                        color = IosTheme.colors.label,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium, fontSize = 9.sp),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             } else {

@@ -4,73 +4,54 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/**
- * iOS 系统色。取自 Apple HIG 的 System Colors 与 Semantic Colors,
- * 刻意不复用 MaterialTheme.colorScheme —— 两套语义不对齐,混用会让观感飘回安卓。
- */
-data class IosColors(
-    val accent: Color,
-    val label: Color,
-    val secondaryLabel: Color,
-    val tertiaryLabel: Color,
-    val spinner: Color,
-    val separator: Color,
-    val groupedBackground: Color,
-    val card: Color,
-    val pressedHighlight: Color,
-    val fieldBackground: Color,
+/** M3 色板之外、业务上需要的语义色。浅色 / 深色各一套,保证在两种底色上都清楚。 */
+data class ExtendedColors(
+    /** 成功、已开启、已解决。 */
+    val success: Color,
+    val onSuccessContainer: Color,
+    val successContainer: Color,
+    /** 警告、待处理、置顶。 */
+    val warning: Color,
+    val warningContainer: Color,
+    val onWarningContainer: Color,
+    /** 点赞 / 回应的心形。 */
+    val like: Color,
+    /** 站长皇冠、高等级徽章等金色点缀。 */
+    val gold: Color,
+    /** 代码块底色。 */
     val codeBackground: Color,
-    val destructive: Color,
-    val isDark: Boolean,
 )
 
-/** systemBlue,iOS 的默认强调色与链接色。 */
-private val SystemBlue = Color(0xFF007AFF)
-private val SystemRedLight = Color(0xFFFF3B30)
-private val SystemRedDark = Color(0xFFFF453A)
-
-val LightIosColors = IosColors(
-    accent = SystemBlue,
-    label = Color(0xFF000000),
-    // iOS 的 secondaryLabel/tertiaryLabel 是带透明度的黑,不是实心灰。
-    secondaryLabel = Color(0x993C3C43),
-    tertiaryLabel = Color(0x4D3C3C43),
-    spinner = Color(0xCC3C3C43),
-    separator = Color(0x4A3C3C43),
-    groupedBackground = Color(0xFFF2F2F7),
-    card = Color(0xFFFFFFFF),
-    // systemGray5,行按压时的整行底色。
-    pressedHighlight = Color(0xFFE5E5EA),
-    fieldBackground = Color(0x1F767680),
-    codeBackground = Color(0xFFF6F6F8),
-    destructive = SystemRedLight,
-    isDark = false,
+val LightExtendedColors = ExtendedColors(
+    success = Color(0xFF2E7D32),
+    successContainer = Color(0xFFC8E6C9),
+    onSuccessContainer = Color(0xFF0B3D0E),
+    warning = Color(0xFFB26A00),
+    warningContainer = Color(0xFFFFE0B2),
+    onWarningContainer = Color(0xFF4A2800),
+    like = Color(0xFFD81B60),
+    gold = Color(0xFFB8860B),
+    codeBackground = Color(0xFFEDEDF4),
 )
 
-val DarkIosColors = IosColors(
-    accent = Color(0xFF0A84FF),
-    label = Color(0xFFFFFFFF),
-    secondaryLabel = Color(0x99EBEBF5),
-    tertiaryLabel = Color(0x4DEBEBF5),
-    spinner = Color(0xCCEBEBF5),
-    separator = Color(0x99545458),
-    // iOS 深色的分组背景是纯黑,卡片才是 #1C1C1E。
-    groupedBackground = Color(0xFF000000),
-    card = Color(0xFF1C1C1E),
-    pressedHighlight = Color(0xFF2C2C2E),
-    fieldBackground = Color(0x3D767680),
-    codeBackground = Color(0xFF1C1C1E),
-    destructive = SystemRedDark,
-    isDark = true,
+val DarkExtendedColors = ExtendedColors(
+    success = Color(0xFF81C784),
+    successContainer = Color(0xFF1B5E20),
+    onSuccessContainer = Color(0xFFC8E6C9),
+    warning = Color(0xFFFFB74D),
+    warningContainer = Color(0xFF5D3A00),
+    onWarningContainer = Color(0xFFFFE0B2),
+    like = Color(0xFFF48FB1),
+    gold = Color(0xFFFFD54F),
+    codeBackground = Color(0xFF1D2024),
 )
 
-/** iOS 的标准间距与尺寸。分隔线厚度不在这里定义 —— 它按 1 物理像素算,见 IosDivider。 */
-object IosMetrics {
+/** 间距与尺寸。遵循 Material 的 4dp 网格。 */
+object Dimens {
     val screenPadding: Dp = 16.dp
-    val rowMinHeight: Dp = 44.dp
-    val cardCorner: Dp = 10.dp
-    val tabBarHeight: Dp = 49.dp
-    val navBarHeight: Dp = 44.dp
-    val largeTitleHeight: Dp = 52.dp
+    val rowMinHeight: Dp = 56.dp
+    val cardCorner: Dp = 16.dp
+    val tabBarHeight: Dp = 80.dp
+    val navBarHeight: Dp = 64.dp
     val avatarSize: Dp = 40.dp
 }

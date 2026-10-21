@@ -1,5 +1,7 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -83,9 +85,9 @@ fun SearchScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().background(IosTheme.colors.groupedBackground)) {
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
         // 顶部大标题栏
-        IosNavBar(title = "搜索", trailing = trailing)
+        AppTopBar(title = "搜索", trailing = { trailing() })
 
         // 搜索输入栏 (胶囊式圆角矩形 + 放大镜 Icon + 右侧取消)
         Row(
@@ -98,12 +100,12 @@ fun SearchScreen(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(50))
-                    .background(IosTheme.colors.fieldBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .padding(horizontal = 12.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SearchLoupeIcon(
-                    tint = IosTheme.colors.secondaryLabel,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp),
                 )
                 Spacer(Modifier.width(8.dp))
@@ -111,8 +113,8 @@ fun SearchScreen(
                     value = state.query,
                     onValueChange = onQuery,
                     singleLine = true,
-                    textStyle = IosTheme.type.body.copy(color = IosTheme.colors.label),
-                    cursorBrush = SolidColor(IosTheme.colors.accent),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                     modifier = Modifier
@@ -124,8 +126,8 @@ fun SearchScreen(
                             if (state.query.isEmpty()) {
                                 Text(
                                     "输入关键词查找话题",
-                                    style = IosTheme.type.body,
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             field()
@@ -137,18 +139,18 @@ fun SearchScreen(
                         modifier = Modifier
                             .size(18.dp)
                             .clip(CircleShape)
-                            .background(IosTheme.colors.secondaryLabel.copy(alpha = 0.2f))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
                             .clickable { onQuery("") },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("✕", fontSize = 10.sp, color = IosTheme.colors.secondaryLabel)
+                        Text("✕", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
             Text(
                 text = "取消",
-                style = IosTheme.type.body,
-                color = IosTheme.colors.accent,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .clickable {
                         onQuery("")
@@ -169,14 +171,14 @@ fun SearchScreen(
         ) {
             Text(
                 text = "排序依据",
-                style = IosTheme.type.footnote,
-                color = IosTheme.colors.secondaryLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             // 当前排序胶囊 (高亮浅蓝底 + 蓝色文字与箭头)
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
-                    .background(IosTheme.colors.accent.copy(alpha = 0.12f))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                     .clickable {
                         focusManager.clearFocus()
                         showSort = true
@@ -187,15 +189,15 @@ fun SearchScreen(
             ) {
                 Text(
                     text = state.order.label,
-                    style = IosTheme.type.footnote,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
-                    color = IosTheme.colors.accent,
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = "⌄",
-                    style = IosTheme.type.footnote,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = IosTheme.colors.accent,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -208,7 +210,7 @@ fun SearchScreen(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(vertical = 4.dp),
         ) {
-            if (state.results.initialLoading) item("loading") { IosLoadingBox() }
+            if (state.results.initialLoading) item("loading") { LoadingBox() }
             state.results.error?.let { message ->
                 item("error") { ErrorNotice(message) { onQuery(state.query) } }
             }
@@ -216,7 +218,7 @@ fun SearchScreen(
                 item("empty") { EmptyNotice() }
             }
             itemsIndexed(state.results.items, key = { _, item -> item.topic.id }) { index, item ->
-                Column(Modifier.background(IosTheme.colors.card)) {
+                Column(Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)) {
                     val topicWithExcerpt = remember(item, state.excerpts[item.topic.id]) {
                         if (state.excerpts[item.topic.id] != null) {
                             item.copy(topic = item.topic.copy(excerpt = state.excerpts[item.topic.id]))
@@ -231,11 +233,11 @@ fun SearchScreen(
                         },
                     )
                     if (index < state.results.items.lastIndex) {
-                        IosDivider(startIndent = IosMetrics.screenPadding)
+                        ListDivider(startIndent = Dimens.screenPadding)
                     }
                 }
             }
-            if (state.results.loadingMore) item("more") { IosLoadingBox() }
+            if (state.results.loadingMore) item("more") { LoadingBox() }
         }
     }
 
@@ -268,7 +270,7 @@ fun SearchScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                        .background(IosTheme.colors.card)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -282,7 +284,7 @@ fun SearchScreen(
                         modifier = Modifier
                             .size(width = 36.dp, height = 4.dp)
                             .clip(RoundedCornerShape(2.dp))
-                            .background(IosTheme.colors.separator),
+                            .background(MaterialTheme.colorScheme.outlineVariant),
                     )
 
                     Spacer(Modifier.height(12.dp))
@@ -297,19 +299,19 @@ fun SearchScreen(
                     ) {
                         Text(
                             text = "搜索排序",
-                            style = IosTheme.type.title3,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = IosTheme.colors.label,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Box(
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(CircleShape)
-                                .background(IosTheme.colors.fieldBackground)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                                 .clickable { showSort = false },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("✕", fontSize = 12.sp, color = IosTheme.colors.secondaryLabel)
+                            Text("✕", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -323,7 +325,7 @@ fun SearchScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(
-                                    if (isSelected) IosTheme.colors.accent.copy(alpha = 0.12f)
+                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                     else Color.Transparent,
                                 )
                                 .clickable {
@@ -337,22 +339,22 @@ fun SearchScreen(
                             Spacer(Modifier.width(12.dp))
                             Text(
                                 text = order.label,
-                                style = IosTheme.type.body,
+                                style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = IosTheme.colors.label,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
                             if (isSelected) {
                                 Text(
                                     text = "✓",
-                                    color = IosTheme.colors.accent,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 17.sp,
                                 )
                             }
                         }
                         if (order != SearchOrder.entries.last()) {
-                            IosDivider(modifier = Modifier.padding(horizontal = 8.dp))
+                            ListDivider(modifier = Modifier.padding(horizontal = 8.dp))
                         }
                     }
 
@@ -369,8 +371,8 @@ fun SearchScreen(
                     ) {
                         Text(
                             text = "取消",
-                            style = IosTheme.type.body,
-                            color = IosTheme.colors.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -395,7 +397,7 @@ private fun SearchLoupeIcon(tint: Color, modifier: Modifier = Modifier) {
 /** 排序抽屉中各选项的专属贴吧/社区风格图标 */
 @Composable
 private fun SearchOrderIcon(order: SearchOrder, isSelected: Boolean) {
-    val tint = if (isSelected) IosTheme.colors.accent else IosTheme.colors.secondaryLabel
+    val tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     Box(
         modifier = Modifier.size(24.dp),
         contentAlignment = Alignment.Center,

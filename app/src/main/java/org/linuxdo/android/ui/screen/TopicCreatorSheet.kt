@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui.screen
 
+import org.linuxdo.android.ui.design.*
+import androidx.compose.material3.MaterialTheme
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -36,14 +39,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.linuxdo.android.data.DiscourseTagInfo
-import org.linuxdo.android.ui.design.IosDivider
+import org.linuxdo.android.ui.design.ListDivider
 import android.net.Uri
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
-import org.linuxdo.android.ui.design.IosActivityIndicator
-import org.linuxdo.android.ui.design.IosTheme
+import org.linuxdo.android.ui.design.LoadingIndicator
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.SolidColor
@@ -68,7 +70,7 @@ import org.linuxdo.android.data.compactCategoryGroups
 import org.linuxdo.android.data.fixedTagsForCategory
 import org.linuxdo.android.data.flattenCategories
 import org.linuxdo.android.ui.*
-import org.linuxdo.android.ui.design.IosTextAction
+import org.linuxdo.android.ui.design.TextAction
 import org.linuxdo.android.ui.editor.RichMarkdownEditorView
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -166,7 +168,7 @@ fun TopicCreatorSheet(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(IosTheme.colors.card)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -185,14 +187,14 @@ fun TopicCreatorSheet(
                 modifier = Modifier
                     .size(34.dp)
                     .clip(CircleShape)
-                    .background(IosTheme.colors.fieldBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .clickable(enabled = !state.savingDraft && !state.submitting) { attemptClose() },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "✕",
-                    style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold),
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -200,8 +202,8 @@ fun TopicCreatorSheet(
 
             Text(
                 text = if (state.isReplyDraft) "编辑回复草稿" else "创建新话题",
-                style = IosTheme.type.headline.copy(fontSize = 17.sp),
-                color = IosTheme.colors.label,
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
@@ -213,8 +215,8 @@ fun TopicCreatorSheet(
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
                     .background(
-                        if (canSave) IosTheme.colors.accent.copy(alpha = 0.12f)
-                        else IosTheme.colors.fieldBackground,
+                        if (canSave) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        else MaterialTheme.colorScheme.surfaceContainerHighest,
                     )
                     .clickable(enabled = canSave) {
                         editorView?.exportToMarkdown()?.let { onRawChange(it) }
@@ -225,8 +227,8 @@ fun TopicCreatorSheet(
             ) {
                 Text(
                     text = if (state.savingDraft) "保存中…" else "保存",
-                    style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (canSave) IosTheme.colors.accent else IosTheme.colors.tertiaryLabel,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 )
             }
 
@@ -238,8 +240,8 @@ fun TopicCreatorSheet(
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
                     .background(
-                        if (canPublish) IosTheme.colors.accent
-                        else IosTheme.colors.accent.copy(alpha = 0.35f),
+                        if (canPublish) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                     )
                     .clickable(enabled = canPublish) {
                         editorView?.exportToMarkdown()?.let { onRawChange(it) }
@@ -250,27 +252,27 @@ fun TopicCreatorSheet(
             ) {
                 Text(
                     text = if (state.submitting) "发布中…" else if (state.isReplyDraft) "发送" else "发布",
-                    style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = Color.White,
                 )
             }
         }
 
-        IosDivider()
+        ListDivider()
 
         // 错误或保存成功轻提示
         state.error?.let { err ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(IosTheme.colors.destructive.copy(alpha = 0.10f))
+                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.10f))
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = err,
-                    style = IosTheme.type.footnote,
-                    color = IosTheme.colors.destructive,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -286,7 +288,7 @@ fun TopicCreatorSheet(
             ) {
                 Text(
                     text = "✓ $msg",
-                    style = IosTheme.type.footnote.copy(fontWeight = FontWeight.Medium),
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                     color = Color(0xFF389E0D),
                 )
             }
@@ -302,7 +304,7 @@ fun TopicCreatorSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 左侧分类胶囊：宽度充裕，未选择时也具有良好开阔度
-                val dotColor = selectedCategory?.let { parseCategoryColor(it.color) } ?: IosTheme.colors.accent
+                val dotColor = selectedCategory?.let { parseCategoryColor(it.color) } ?: MaterialTheme.colorScheme.primary
                 val baseName = selectedCategory?.let { categoryBaseNameOf(it.name) }
                 val level = selectedCategory?.let { categoryLevelOf(it) } ?: 0
                 val isRestricted = (level > 0) || (selectedCategory?.readRestricted == true)
@@ -312,8 +314,8 @@ fun TopicCreatorSheet(
                         .weight(1.15f)
                         .height(38.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(IosTheme.colors.card)
-                        .border(1.dp, IosTheme.colors.separator.copy(alpha = 0.55f), RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f), RoundedCornerShape(50))
                         .clickable { showCategoryDialog = true }
                         .padding(horizontal = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -328,15 +330,15 @@ fun TopicCreatorSheet(
                         Spacer(Modifier.width(6.dp))
                         if (isRestricted) {
                             ComposerLockIcon(
-                                tint = IosTheme.colors.secondaryLabel,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(12.dp),
                             )
                             Spacer(Modifier.width(4.dp))
                         }
                         Text(
                             text = if (level > 0) "$baseName Lv.$level" else baseName.orEmpty(),
-                            style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Medium),
-                            color = IosTheme.colors.label,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false),
@@ -344,8 +346,8 @@ fun TopicCreatorSheet(
                     } else {
                         Text(
                             text = "选择分类…",
-                            style = IosTheme.type.subheadline,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             modifier = Modifier.weight(1f, fill = false),
                         )
@@ -353,8 +355,8 @@ fun TopicCreatorSheet(
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = "▾",
-                        style = IosTheme.type.caption,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -379,36 +381,36 @@ fun TopicCreatorSheet(
                             .fillMaxWidth()
                             .height(38.dp)
                             .clip(RoundedCornerShape(50))
-                            .background(IosTheme.colors.card)
-                            .border(1.dp, IosTheme.colors.separator.copy(alpha = 0.55f), RoundedCornerShape(50))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f), RoundedCornerShape(50))
                             .clickable { showTagDropdown = true }
                             .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         ComposerTagIcon(
-                            tint = if (state.tags.isNotEmpty()) IosTheme.colors.accent else IosTheme.colors.secondaryLabel,
+                            tint = if (state.tags.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(15.dp),
                         )
                         Spacer(Modifier.width(6.dp))
                         if (state.tags.isEmpty()) {
                             Text(
                                 text = "可选标签…",
-                                style = IosTheme.type.subheadline,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 modifier = Modifier.weight(1f, fill = false),
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = "+",
-                                style = IosTheme.type.headline.copy(fontSize = 17.sp, fontWeight = FontWeight.Normal),
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Normal),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
                             Text(
                                 text = state.tags.joinToString(", "),
-                                style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Medium),
-                                color = IosTheme.colors.accent,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f, fill = false),
@@ -416,8 +418,8 @@ fun TopicCreatorSheet(
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = "▾",
-                                style = IosTheme.type.caption,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -432,7 +434,7 @@ fun TopicCreatorSheet(
                         modifier = Modifier
                             .widthIn(min = 250.dp, max = 320.dp)
                             .heightIn(max = 340.dp)
-                            .background(IosTheme.colors.card),
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow),
                     ) {
                         // 顶部必选标签组提示（如果有）
                         state.requiredTagGroupName?.let { groupName ->
@@ -441,13 +443,13 @@ fun TopicCreatorSheet(
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 4.dp)
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(IosTheme.colors.accent.copy(alpha = 0.10f))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
                                     .padding(horizontal = 8.dp, vertical = 5.dp),
                             ) {
                                 Text(
                                     text = "要求至少选择 ${state.requiredTagMinCount} 个「$groupName」标签",
-                                    style = IosTheme.type.caption.copy(fontSize = 11.5.sp),
-                                    color = IosTheme.colors.accent,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.5.sp),
+                                    color = MaterialTheme.colorScheme.primary,
                                 )
                             }
                         }
@@ -458,7 +460,7 @@ fun TopicCreatorSheet(
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(IosTheme.colors.fieldBackground)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                                 .padding(horizontal = 8.dp, vertical = 6.dp),
                         ) {
                             BasicTextField(
@@ -468,16 +470,16 @@ fun TopicCreatorSheet(
                                     onSearchTags(query)
                                 },
                                 singleLine = true,
-                                textStyle = IosTheme.type.caption.copy(color = IosTheme.colors.label, fontSize = 13.sp),
-                                cursorBrush = SolidColor(IosTheme.colors.accent),
+                                textStyle = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                 modifier = Modifier.fillMaxWidth(),
                                 decorationBox = { innerField ->
                                     Box {
                                         if (tagSearchQuery.isEmpty()) {
                                             Text(
                                                 text = "搜索…",
-                                                style = IosTheme.type.caption.copy(fontSize = 13.sp),
-                                                color = IosTheme.colors.tertiaryLabel,
+                                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
+                                                color = MaterialTheme.colorScheme.outline,
                                             )
                                         }
                                         innerField()
@@ -491,12 +493,12 @@ fun TopicCreatorSheet(
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                IosActivityIndicator(diameter = 14.dp)
+                                LoadingIndicator(diameter = 14.dp)
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     text = "加载标签中…",
-                                    style = IosTheme.type.caption,
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -506,8 +508,8 @@ fun TopicCreatorSheet(
                                 text = {
                                     Text(
                                         text = if (tagSearchQuery.isBlank()) "当前分类无可选标签" else "未找到匹配标签",
-                                        style = IosTheme.type.caption,
-                                        color = IosTheme.colors.secondaryLabel,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 },
                                 onClick = {},
@@ -534,34 +536,34 @@ fun TopicCreatorSheet(
                                                     modifier = Modifier
                                                         .clip(RoundedCornerShape(4.dp))
                                                         .background(
-                                                            if (isSelected) IosTheme.colors.accent.copy(alpha = 0.12f)
-                                                            else IosTheme.colors.fieldBackground
+                                                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                            else MaterialTheme.colorScheme.surfaceContainerHighest
                                                         )
                                                         .padding(horizontal = 7.dp, vertical = 3.dp),
                                                 ) {
                                                     Text(
                                                         text = tagItem.text.ifBlank { tagItem.name },
-                                                        style = IosTheme.type.subheadline.copy(
+                                                        style = MaterialTheme.typography.bodyMedium.copy(
                                                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                                                             fontSize = 13.5.sp,
                                                         ),
-                                                        color = if (isSelected) IosTheme.colors.accent else IosTheme.colors.label,
+                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 }
                                                 if (tagItem.count > 0) {
                                                     Spacer(Modifier.width(6.dp))
                                                     Text(
                                                         text = "x${tagItem.count}",
-                                                        style = IosTheme.type.caption.copy(fontSize = 12.sp),
-                                                        color = IosTheme.colors.secondaryLabel,
+                                                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     )
                                                 }
                                             }
                                             if (isSelected) {
                                                 Text(
                                                     text = "✓",
-                                                    style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Bold),
-                                                    color = IosTheme.colors.accent,
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.primary,
                                                 )
                                             }
                                         }
@@ -575,12 +577,12 @@ fun TopicCreatorSheet(
                         }
 
                         if (state.tags.isNotEmpty()) {
-                            IosDivider()
+                            ListDivider()
                             DropdownMenuItem(
                                 text = {
                                     Text(
                                         text = "清空已选标签 (${state.tags.size})",
-                                        style = IosTheme.type.caption.copy(color = IosTheme.colors.destructive),
+                                        style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.error),
                                     )
                                 },
                                 onClick = { onTagsChange(emptyList()) },
@@ -590,7 +592,7 @@ fun TopicCreatorSheet(
                 }
             }
 
-            IosDivider()
+            ListDivider()
 
             // 标题输入框 (带右侧 0/6 字符提示)
             Row(
@@ -602,12 +604,12 @@ fun TopicCreatorSheet(
                 BasicTextField(
                     value = state.title,
                     onValueChange = onTitleChange,
-                    textStyle = IosTheme.type.headline.copy(
+                    textStyle = MaterialTheme.typography.titleMedium.copy(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = IosTheme.colors.label,
+                        color = MaterialTheme.colorScheme.onSurface,
                     ),
-                    cursorBrush = SolidColor(IosTheme.colors.accent),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     maxLines = 2,
                     modifier = Modifier.weight(1f),
                     decorationBox = { innerTextField ->
@@ -615,11 +617,11 @@ fun TopicCreatorSheet(
                             if (state.title.isEmpty()) {
                                 Text(
                                     text = "输入标题，或在此处粘贴链接",
-                                    style = IosTheme.type.headline.copy(
+                                    style = MaterialTheme.typography.titleMedium.copy(
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Normal,
                                     ),
-                                    color = IosTheme.colors.tertiaryLabel,
+                                    color = MaterialTheme.colorScheme.outline,
                                 )
                             }
                             innerTextField()
@@ -630,35 +632,35 @@ fun TopicCreatorSheet(
                 val titleLen = state.title.length
                 Text(
                     text = "$titleLen / 6",
-                    style = IosTheme.type.caption.copy(fontWeight = FontWeight.Medium),
-                    color = if (titleLen < 6) Color(0xFFFF453A) else IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                    color = if (titleLen < 6) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
-            IosDivider()
+            ListDivider()
         } else {
             // 回复草稿信息提示
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(IosTheme.colors.groupedBackground.copy(alpha = 0.6f))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = state.title.ifBlank { "回复话题 #${state.replyTopicId ?: ""}" },
-                    style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Medium),
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            IosDivider()
+            ListDivider()
         }
 
         // 正文编辑区（所见即所得图文流：基于原生 EditText + ReplacementSpan，全光标连续穿越）
-        val textColorInt = IosTheme.colors.label.toArgb()
-        val hintColorInt = IosTheme.colors.tertiaryLabel.toArgb()
+        val textColorInt = MaterialTheme.colorScheme.onSurface.toArgb()
+        val hintColorInt = MaterialTheme.colorScheme.outline.toArgb()
 
         Box(
             modifier = Modifier
@@ -690,32 +692,32 @@ fun TopicCreatorSheet(
                         .align(Alignment.BottomCenter)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(IosTheme.colors.fieldBackground.copy(alpha = 0.95f))
-                        .border(1.dp, IosTheme.colors.separator.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IosActivityIndicator(diameter = 16.dp)
+                        LoadingIndicator(diameter = 16.dp)
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = "正在上传图片并插入正文…",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
             }
         }
 
-        IosDivider()
+        ListDivider()
 
         // 底部工具栏：图片上传、文件上传、Emoji、快捷 Markdown、字数提示
         val canPickMedia = !state.uploading && !state.submitting && !state.savingDraft
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(IosTheme.colors.groupedBackground.copy(alpha = 0.5f))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -730,7 +732,7 @@ fun TopicCreatorSheet(
                 contentAlignment = Alignment.Center,
             ) {
                 ComposerImageIcon(
-                    tint = if (canPickMedia) IosTheme.colors.secondaryLabel else IosTheme.colors.tertiaryLabel,
+                    tint = if (canPickMedia) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
                 )
             }
 
@@ -747,7 +749,7 @@ fun TopicCreatorSheet(
                 contentAlignment = Alignment.Center,
             ) {
                 ComposerAttachmentIcon(
-                    tint = if (canPickMedia) IosTheme.colors.secondaryLabel else IosTheme.colors.tertiaryLabel,
+                    tint = if (canPickMedia) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
                 )
             }
 
@@ -759,7 +761,7 @@ fun TopicCreatorSheet(
                     .size(36.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(
-                        if (showEmojiPicker) IosTheme.colors.accent.copy(alpha = 0.14f) else Color.Transparent,
+                        if (showEmojiPicker) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent,
                     )
                     .clickable(enabled = canPickMedia) {
                         if (!showEmojiPicker) keyboard?.hide()
@@ -768,9 +770,9 @@ fun TopicCreatorSheet(
                 contentAlignment = Alignment.Center,
             ) {
                 ComposerEmojiIcon(
-                    tint = if (showEmojiPicker) IosTheme.colors.accent
-                    else if (canPickMedia) IosTheme.colors.secondaryLabel
-                    else IosTheme.colors.tertiaryLabel,
+                    tint = if (showEmojiPicker) MaterialTheme.colorScheme.primary
+                    else if (canPickMedia) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.outline,
                 )
             }
 
@@ -787,31 +789,31 @@ fun TopicCreatorSheet(
                 contentAlignment = Alignment.Center,
             ) {
                 ComposerBoldIcon(
-                    tint = if (canPickMedia) IosTheme.colors.secondaryLabel else IosTheme.colors.tertiaryLabel,
+                    tint = if (canPickMedia) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
                 )
             }
 
             Spacer(Modifier.weight(1f))
 
             if (state.uploading) {
-                IosActivityIndicator(diameter = 14.dp)
+                LoadingIndicator(diameter = 14.dp)
                 Spacer(Modifier.width(6.dp))
                 Text(
                     text = "上传中…",
-                    style = IosTheme.type.caption,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 Text(
                     text = "${state.raw.length} 字",
-                    style = IosTheme.type.caption,
-                    color = IosTheme.colors.tertiaryLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.outline,
                 )
             }
         }
 
         if (showEmojiPicker) {
-            IosDivider()
+            ListDivider()
             QuickEmojiPicker(
                 onSelect = { token -> appendTextToken(token) },
             )
@@ -858,7 +860,7 @@ fun TopicCreatorSheet(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(IosTheme.colors.card)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(horizontal = 22.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -877,16 +879,16 @@ fun TopicCreatorSheet(
                     ) {
                         Text(
                             text = "✕",
-                            style = IosTheme.type.caption.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
 
                 Text(
                     text = "保存草稿？",
-                    style = IosTheme.type.largeTitle.copy(fontWeight = FontWeight.Bold, fontSize = 22.sp),
-                    color = IosTheme.colors.label,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+                    color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                 )
 
@@ -894,8 +896,8 @@ fun TopicCreatorSheet(
 
                 Text(
                     text = "当前有未保存的内容，关闭前是否\n将其保存为草稿？",
-                    style = IosTheme.type.body.copy(fontSize = 15.sp, lineHeight = 22.sp),
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 22.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
 
@@ -907,7 +909,7 @@ fun TopicCreatorSheet(
                         .fillMaxWidth()
                         .height(48.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(IosTheme.colors.accent)
+                        .background(MaterialTheme.colorScheme.primary)
                         .clickable {
                             showCloseConfirmDialog = false
                             editorView?.exportToMarkdown()?.let { onRawChange(it) }
@@ -917,7 +919,7 @@ fun TopicCreatorSheet(
                 ) {
                     Text(
                         text = "保存草稿并退出",
-                        style = IosTheme.type.headline.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                         color = Color.White,
                     )
                 }
@@ -930,8 +932,8 @@ fun TopicCreatorSheet(
                         .fillMaxWidth()
                         .height(48.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(Color(0xFFFF453A).copy(alpha = 0.08f))
-                        .border(1.dp, Color(0xFFFF453A).copy(alpha = 0.35f), RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.08f))
+                        .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f), RoundedCornerShape(50))
                         .clickable {
                             showCloseConfirmDialog = false
                             onClose()
@@ -940,8 +942,8 @@ fun TopicCreatorSheet(
                 ) {
                     Text(
                         text = "放弃更改",
-                        style = IosTheme.type.headline.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
-                        color = Color(0xFFFF453A),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }
@@ -970,7 +972,7 @@ private fun CategoryPickerDialog(
                 .fillMaxWidth(0.92f)
                 .heightIn(max = 560.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(vertical = 16.dp),
         ) {
             Row(
@@ -981,15 +983,15 @@ private fun CategoryPickerDialog(
             ) {
                 Text(
                     text = "选择话题分类",
-                    style = IosTheme.type.headline,
-                    color = IosTheme.colors.label,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
-                IosTextAction("关闭", color = IosTheme.colors.secondaryLabel, onClick = onDismiss)
+                TextAction("关闭", color = MaterialTheme.colorScheme.onSurfaceVariant, onClick = onDismiss)
             }
 
             Spacer(Modifier.height(8.dp))
-            IosDivider()
+            ListDivider()
 
             LazyColumn(
                 modifier = Modifier
@@ -998,7 +1000,7 @@ private fun CategoryPickerDialog(
             ) {
                 items(groups, key = { it.first.id }) { (parent, levels) ->
                     val baseName = categoryBaseNameOf(parent.name)
-                    val dotColor = parseCategoryColor(parent.color) ?: IosTheme.colors.accent
+                    val dotColor = parseCategoryColor(parent.color) ?: MaterialTheme.colorScheme.primary
                     val variants = remember(parent, levels) {
                         (listOf(parent) + levels.sortedBy { categoryLevelOf(it) })
                             .distinctBy { it.id }
@@ -1010,7 +1012,7 @@ private fun CategoryPickerDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                if (isGroupSelected) IosTheme.colors.accent.copy(alpha = 0.06f)
+                                if (isGroupSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
                                 else Color.Transparent,
                             )
                             .clickable { onSelect(parent.id.toInt()) }
@@ -1029,8 +1031,8 @@ private fun CategoryPickerDialog(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = baseName,
-                                style = IosTheme.type.body.copy(fontWeight = FontWeight.SemiBold),
-                                color = IosTheme.colors.label,
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
 
@@ -1042,17 +1044,17 @@ private fun CategoryPickerDialog(
                                     for (variant in variants) {
                                         val lvl = categoryLevelOf(variant)
                                         val isVariantSelected = selectedCategoryId == variant.id.toInt()
-                                        val (pillBg, _, pillFg) = levelPillColors(lvl, IosTheme.colors.isDark)
+                                        val (pillBg, _, pillFg) = levelPillColors(lvl, AppTheme.isDark)
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(6.dp))
-                                                .background(if (isVariantSelected) IosTheme.colors.accent else pillBg)
+                                                .background(if (isVariantSelected) MaterialTheme.colorScheme.primary else pillBg)
                                                 .clickable { onSelect(variant.id.toInt()) }
                                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                                         ) {
                                             Text(
                                                 text = "Lv.$lvl",
-                                                style = IosTheme.type.caption.copy(
+                                                style = MaterialTheme.typography.labelMedium.copy(
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.SemiBold,
                                                 ),
@@ -1064,8 +1066,8 @@ private fun CategoryPickerDialog(
                             } else if (selectedCategoryId == parent.id.toInt()) {
                                 Text(
                                     text = "✓",
-                                    style = IosTheme.type.headline,
-                                    color = IosTheme.colors.accent,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
                                 )
                             }
                         }
@@ -1074,14 +1076,14 @@ private fun CategoryPickerDialog(
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = parent.description,
-                                style = IosTheme.type.caption,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
-                    IosDivider()
+                    ListDivider()
                 }
             }
         }
@@ -1109,7 +1111,7 @@ private fun TagPickerDialog(
                 .fillMaxWidth(0.92f)
                 .heightIn(max = 520.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(20.dp),
         ) {
             Row(
@@ -1119,21 +1121,21 @@ private fun TagPickerDialog(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "选择标签",
-                        style = IosTheme.type.headline,
-                        color = IosTheme.colors.label,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = if (categoryName != null) "分类「$categoryName」可选固定标签" else "可选固定标签列表",
-                        style = IosTheme.type.caption,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IosTextAction("关闭", color = IosTheme.colors.secondaryLabel, onClick = onDismiss)
+                TextAction("关闭", color = MaterialTheme.colorScheme.onSurfaceVariant, onClick = onDismiss)
             }
 
             Spacer(Modifier.height(14.dp))
-            IosDivider()
+            ListDivider()
             Spacer(Modifier.height(14.dp))
 
             if (availableTags.isEmpty()) {
@@ -1146,8 +1148,8 @@ private fun TagPickerDialog(
                 ) {
                     Text(
                         text = "当前分类暂无可关联标签",
-                        style = IosTheme.type.subheadline,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
@@ -1167,8 +1169,8 @@ private fun TagPickerDialog(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(
-                                        if (isSelected) IosTheme.colors.accent
-                                        else IosTheme.colors.fieldBackground,
+                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.surfaceContainerHighest,
                                     )
                                     .clickable {
                                         workingTags = if (isSelected) {
@@ -1182,11 +1184,11 @@ private fun TagPickerDialog(
                             ) {
                                 Text(
                                     text = if (isSelected) "# $tag ✓" else "# $tag",
-                                    style = IosTheme.type.subheadline.copy(
+                                    style = MaterialTheme.typography.bodyMedium.copy(
                                         fontSize = 13.sp,
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                     ),
-                                    color = if (isSelected) Color.White else IosTheme.colors.label,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
@@ -1195,7 +1197,7 @@ private fun TagPickerDialog(
             }
 
             Spacer(Modifier.height(16.dp))
-            IosDivider()
+            ListDivider()
             Spacer(Modifier.height(12.dp))
 
             Row(
@@ -1205,18 +1207,18 @@ private fun TagPickerDialog(
             ) {
                 Text(
                     text = "已选 ${workingTags.size} 个标签",
-                    style = IosTheme.type.caption,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IosTextAction("清空", color = IosTheme.colors.secondaryLabel, onClick = { workingTags = emptySet() })
+                    TextAction("清空", color = MaterialTheme.colorScheme.onSurfaceVariant, onClick = { workingTags = emptySet() })
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .background(IosTheme.colors.accent)
+                            .background(MaterialTheme.colorScheme.primary)
                             .clickable {
                                 onConfirm(workingTags.toList())
                             }
@@ -1225,7 +1227,7 @@ private fun TagPickerDialog(
                     ) {
                         Text(
                             text = "确定",
-                            style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = Color.White,
                         )
                     }

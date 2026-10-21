@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui
 
+import org.linuxdo.android.ui.design.*
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -26,14 +29,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.linuxdo.android.ui.design.IosMetrics
-import org.linuxdo.android.ui.design.IosTheme
+import org.linuxdo.android.ui.design.Dimens
 import android.graphics.Canvas
 import androidx.compose.ui.geometry.Size
 
 @Composable
 fun UnreadBell(count: Int, onClick: () -> Unit) {
-    val iconColor = IosTheme.colors.secondaryLabel
+    val iconColor = MaterialTheme.colorScheme.onSurfaceVariant
     Box(Modifier.size(44.dp).semantics { contentDescription = "通知，${count}条回复或私信未读" }
         .clickable(onClick = onClick), contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(22.dp)) {
@@ -50,7 +52,7 @@ fun UnreadBell(count: Int, onClick: () -> Unit) {
         if (count > 0) Text(if (count > 99) "99+" else count.toString(), color = Color.White,
             fontSize = 10.sp, lineHeight = 12.sp,
             modifier = Modifier.align(Alignment.TopEnd).offset(x = 2.dp, y = 2.dp)
-                .background(Color(0xFFFF3B30), RoundedCornerShape(20.dp)).padding(horizontal = 4.dp, vertical = 1.dp))
+                .background(MaterialTheme.colorScheme.error, RoundedCornerShape(20.dp)).padding(horizontal = 4.dp, vertical = 1.dp))
     }
 }
 
@@ -60,14 +62,14 @@ fun WebTopBar(screen: Screen) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(IosMetrics.navBarHeight)
-            .background(IosTheme.colors.card),
+            .height(Dimens.navBarHeight)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = if (screen == Screen.Login) "登录 linux.do" else "需要安全验证(通过后自动返回)",
-            style = IosTheme.type.navTitle,
-            color = IosTheme.colors.label,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

@@ -1,5 +1,7 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -125,7 +127,7 @@ fun CategoryListScreen(
     }
 
     var showMenu by remember { mutableStateOf(false) }
-    val dotColor = IosTheme.colors.label.copy(alpha = 0.7f)
+    val dotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
 
     val combinedTrailing: @Composable () -> Unit = {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -238,14 +240,13 @@ fun CategoryListScreen(
         }
     }
 
-    IosLargeTitleScaffold(
+    AppScaffold(
         title = "分类",
         listState = listState,
-        compactTop = true,
         scrollToTopRequest = scrollToTopRequest,
-        trailing = combinedTrailing,
+        trailing = { combinedTrailing() },
     ) {
-        if (state.loading) item("loading") { IosLoadingBox() }
+        if (state.loading) item("loading") { LoadingBox() }
         state.error?.let { message -> item("error") { ErrorNotice(message, onRetry) } }
         if (state.loaded && state.items.isEmpty()) item("empty") { EmptyNotice() }
 
@@ -266,7 +267,7 @@ fun CategoryListScreen(
         itemsIndexed(groups, key = { _, pair -> pair.first.id }) { index, (parent, levels) ->
             var showCardMenu by remember { mutableStateOf(false) }
             val dragging = draggedId == parent.id
-            IosGroupCard(Modifier
+            SectionCard(Modifier
                 .animateItem(placementSpec = if (dragging) null else tween(180))
                 .zIndex(if (dragging) 1f else 0f)
                 .graphicsLayer {
@@ -313,15 +314,15 @@ fun CategoryListScreen(
                 }
                 .padding(vertical = 8.dp)) {
                 Box {
-                    IosRow(
+                    ListRow(
                         onClick = { if (draggedId == null) onOpen(parent) },
                     ) {
                         Column(Modifier.weight(1f).padding(top = 5.dp, bottom = 5.dp, end = 8.dp)) {
                             CategoryTag(parent, prominent = true)
                             Text(
                                 text = "${parent.topicCount} 个话题",
-                                style = IosTheme.type.caption,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 5.dp),
                             )
                         }
@@ -342,7 +343,7 @@ fun CategoryListScreen(
                         }
                         Box(Modifier.size(32.dp).semantics { contentDescription = "调整分类顺序" }
                             .clickable { showCardMenu = true }, contentAlignment = Alignment.Center) {
-                            Text("≡", style = IosTheme.type.title3, color = IosTheme.colors.secondaryLabel)
+                            Text("≡", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -413,7 +414,7 @@ private fun CustomSectionCard(
     val haptic = LocalHapticFeedback.current
     var expanded by rememberSaveable { mutableStateOf(true) }
 
-    IosGroupCard(
+    SectionCard(
         modifier = Modifier
             .padding(vertical = 8.dp)
             .combinedClickable(
@@ -442,28 +443,28 @@ private fun CustomSectionCard(
                 )
                 Text(
                     text = customSection.title.ifBlank { "自定义版块" },
-                    style = IosTheme.type.headline,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = IosTheme.colors.label,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
                 Text(
                     text = if (expanded) "收起 ▾" else "展开 ▸",
-                    style = IosTheme.type.caption.copy(fontSize = 11.sp),
-                    color = IosTheme.colors.accent,
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(end = 8.dp),
                 )
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(IosTheme.colors.fieldBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .clickable(onClick = onEdit)
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
                     Text(
                         text = "长按编辑",
-                        style = IosTheme.type.caption.copy(fontSize = 11.sp),
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Medium,
                     )
                 }
@@ -474,8 +475,8 @@ private fun CustomSectionCard(
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = "暂无快捷链接，长按卡片或点击右上角编辑添加",
-                        style = IosTheme.type.footnote,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 6.dp),
                     )
                 } else {
@@ -484,7 +485,7 @@ private fun CustomSectionCard(
                         if (index > 0) {
                             HorizontalDivider(
                                 thickness = 0.5.dp,
-                                color = IosTheme.colors.separator.copy(alpha = 0.35f),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                                 modifier = Modifier.padding(vertical = 2.dp),
                             )
                         }
@@ -537,9 +538,9 @@ private fun CustomSectionLinkRow(
         )
         Text(
             text = link.name.ifBlank { link.url },
-            style = IosTheme.type.body,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Normal,
-            color = IosTheme.colors.label,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -547,18 +548,18 @@ private fun CustomSectionLinkRow(
         Spacer(Modifier.width(8.dp))
         val (tagBg, tagText, tagLabel) = when {
             isTopic -> Triple(
-                Color(0xFFFF9500).copy(alpha = 0.12f),
-                Color(0xFFFF9500),
+                AppTheme.colors.warning.copy(alpha = 0.12f),
+                AppTheme.colors.warning,
                 "帖子",
             )
             isCategory -> Triple(
-                Color(0xFF007AFF).copy(alpha = 0.12f),
-                Color(0xFF007AFF),
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                MaterialTheme.colorScheme.primary,
                 "板块",
             )
             else -> Triple(
-                IosTheme.colors.fieldBackground,
-                IosTheme.colors.secondaryLabel,
+                MaterialTheme.colorScheme.surfaceContainerHighest,
+                MaterialTheme.colorScheme.onSurfaceVariant,
                 "链接",
             )
         }
@@ -570,7 +571,7 @@ private fun CustomSectionLinkRow(
         ) {
             Text(
                 text = tagLabel,
-                style = IosTheme.type.caption.copy(fontSize = 10.sp),
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp),
                 color = tagText,
                 fontWeight = FontWeight.Medium,
             )
@@ -578,8 +579,8 @@ private fun CustomSectionLinkRow(
         Spacer(Modifier.width(6.dp))
         Text(
             text = "›",
-            style = IosTheme.type.body,
-            color = IosTheme.colors.tertiaryLabel,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.outline,
             fontSize = 17.sp,
         )
     }
@@ -678,7 +679,7 @@ private fun CustomSectionDialog(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 24.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(IosTheme.colors.card),
+                .background(MaterialTheme.colorScheme.surfaceContainerLow),
         ) {
             Column(
                 modifier = Modifier
@@ -693,20 +694,20 @@ private fun CustomSectionDialog(
                 ) {
                     Text(
                         text = if (initialSection == null) "添加自定义版块" else "编辑自定义版块",
-                        style = IosTheme.type.title3,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = IosTheme.colors.label,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
                     Box(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(IosTheme.colors.fieldBackground)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                             .clickable(onClick = onDismiss),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("✕", style = IosTheme.type.caption, color = IosTheme.colors.secondaryLabel)
+                        Text("✕", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -721,26 +722,26 @@ private fun CustomSectionDialog(
                     // 版块标题
                     Text(
                         text = "版块标题",
-                        style = IosTheme.type.subheadline,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = IosTheme.colors.secondaryLabel,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(6.dp))
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
-                            .background(IosTheme.colors.fieldBackground)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                     ) {
                         if (title.isEmpty()) {
-                            Text("输入版块标题，如：我的常逛", style = IosTheme.type.body, color = IosTheme.colors.tertiaryLabel)
+                            Text("输入版块标题，如：我的常逛", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
                         }
                         BasicTextField(
                             value = title,
                             onValueChange = { title = it },
-                            textStyle = IosTheme.type.body.copy(color = IosTheme.colors.label),
-                            cursorBrush = SolidColor(IosTheme.colors.accent),
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                         )
@@ -755,15 +756,15 @@ private fun CustomSectionDialog(
                     ) {
                         Text(
                             text = "版块链接",
-                            style = IosTheme.type.subheadline,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = IosTheme.colors.secondaryLabel,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f),
                         )
                         Text(
                             text = "${links.size} 个链接",
-                            style = IosTheme.type.caption,
-                            color = IosTheme.colors.tertiaryLabel,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline,
                         )
                     }
                     Spacer(Modifier.height(8.dp))
@@ -798,7 +799,7 @@ private fun CustomSectionDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
-                            .border(1.dp, IosTheme.colors.accent.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
                             .clickable {
                                 links.add(CustomSectionLink(icon = "🔗", name = "", url = ""))
                             }
@@ -807,9 +808,9 @@ private fun CustomSectionDialog(
                     ) {
                         Text(
                             text = "＋ 添加另一个链接",
-                            style = IosTheme.type.footnote,
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = IosTheme.colors.accent,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
 
@@ -817,7 +818,7 @@ private fun CustomSectionDialog(
                 }
 
                 Spacer(Modifier.height(10.dp))
-                HorizontalDivider(thickness = 0.5.dp, color = IosTheme.colors.separator.copy(alpha = 0.5f))
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 Spacer(Modifier.height(12.dp))
 
                 // 底部操作按钮
@@ -830,16 +831,16 @@ private fun CustomSectionDialog(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(IosTheme.colors.destructive.copy(alpha = 0.12f))
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f))
                                 .clickable(onClick = onDelete)
                                 .padding(horizontal = 14.dp, vertical = 12.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 text = "删除版块",
-                                style = IosTheme.type.footnote,
+                                style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = IosTheme.colors.destructive,
+                                color = MaterialTheme.colorScheme.error,
                             )
                         }
                     }
@@ -847,7 +848,7 @@ private fun CustomSectionDialog(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(IosTheme.colors.accent)
+                            .background(MaterialTheme.colorScheme.primary)
                             .clickable {
                                 val validLinks = links.filter { it.name.isNotBlank() || it.url.isNotBlank() }
                                 onSave(
@@ -863,7 +864,7 @@ private fun CustomSectionDialog(
                     ) {
                         Text(
                             text = "保 存",
-                            style = IosTheme.type.body,
+                            style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
                         )
@@ -911,7 +912,7 @@ private fun CustomSectionLinkEditorItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(IosTheme.colors.fieldBackground.copy(alpha = 0.5f))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f))
             .padding(10.dp),
     ) {
         // 第一行：[序号与移位] + [图标] + [名称输入框] + [删除]
@@ -922,16 +923,16 @@ private fun CustomSectionLinkEditorItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "#${index + 1}",
-                    style = IosTheme.type.caption.copy(fontSize = 11.sp),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
                     fontWeight = FontWeight.Bold,
-                    color = IosTheme.colors.tertiaryLabel,
+                    color = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.padding(end = 4.dp),
                 )
                 if (onMoveUp != null) {
                     Text(
                         text = "▲",
                         fontSize = 10.sp,
-                        color = IosTheme.colors.secondaryLabel,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .clip(RoundedCornerShape(3.dp))
                             .clickable(onClick = onMoveUp)
@@ -942,7 +943,7 @@ private fun CustomSectionLinkEditorItem(
                     Text(
                         text = "▼",
                         fontSize = 10.sp,
-                        color = IosTheme.colors.secondaryLabel,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .clip(RoundedCornerShape(3.dp))
                             .clickable(onClick = onMoveDown)
@@ -958,7 +959,7 @@ private fun CustomSectionLinkEditorItem(
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(IosTheme.colors.card)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         .clickable { showIconPicker = true }
                         .padding(horizontal = 7.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -969,8 +970,8 @@ private fun CustomSectionLinkEditorItem(
                     )
                     Text(
                         text = " ▾",
-                        style = IosTheme.type.caption.copy(fontSize = 11.sp),
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -993,17 +994,17 @@ private fun CustomSectionLinkEditorItem(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(IosTheme.colors.card)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(horizontal = 10.dp, vertical = 8.dp),
             ) {
                 if (link.name.isEmpty()) {
-                    Text("名称，如：开发调优", style = IosTheme.type.footnote, color = IosTheme.colors.tertiaryLabel)
+                    Text("名称，如：开发调优", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                 }
                 BasicTextField(
                     value = link.name,
                     onValueChange = { onUpdate(link.copy(name = it)) },
-                    textStyle = IosTheme.type.footnote.copy(color = IosTheme.colors.label),
-                    cursorBrush = SolidColor(IosTheme.colors.accent),
+                    textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -1034,17 +1035,17 @@ private fun CustomSectionLinkEditorItem(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(IosTheme.colors.card)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(horizontal = 10.dp, vertical = 8.dp),
             ) {
                 if (link.url.isEmpty()) {
-                    Text("链接，如：/c/dev 或 /t/123", style = IosTheme.type.caption.copy(fontSize = 12.sp), color = IosTheme.colors.tertiaryLabel)
+                    Text("链接，如：/c/dev 或 /t/123", style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp), color = MaterialTheme.colorScheme.outline)
                 }
                 BasicTextField(
                     value = link.url,
                     onValueChange = { onUpdate(link.copy(url = it)) },
-                    textStyle = IosTheme.type.caption.copy(fontSize = 12.sp, color = IosTheme.colors.label),
-                    cursorBrush = SolidColor(IosTheme.colors.accent),
+                    textStyle = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -1056,11 +1057,11 @@ private fun CustomSectionLinkEditorItem(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(IosTheme.colors.accent.copy(alpha = 0.12f))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                     .clickable(onClick = onSelectCategory)
                     .padding(horizontal = 8.dp, vertical = 7.dp),
             ) {
-                Text("选分类", style = IosTheme.type.caption.copy(fontSize = 11.sp), fontWeight = FontWeight.SemiBold, color = IosTheme.colors.accent)
+                Text("选分类", style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
             }
 
             Spacer(Modifier.width(4.dp))
@@ -1069,7 +1070,7 @@ private fun CustomSectionLinkEditorItem(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(IosTheme.colors.card)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .clickable {
                         val clip = clipboard.getText()?.text.orEmpty().trim()
                         if (clip.isNotBlank()) {
@@ -1078,7 +1079,7 @@ private fun CustomSectionLinkEditorItem(
                     }
                     .padding(horizontal = 8.dp, vertical = 7.dp),
             ) {
-                Text("粘贴", style = IosTheme.type.caption.copy(fontSize = 11.sp), color = IosTheme.colors.secondaryLabel)
+                Text("粘贴", style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -1108,9 +1109,9 @@ private fun IconPickerPopup(
         ) {
             Text(
                 text = "选择图标",
-                style = IosTheme.type.footnote,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
-                color = IosTheme.colors.label,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = 6.dp),
             )
             val rows = PRESET_CUSTOM_ICONS.chunked(6)
@@ -1124,7 +1125,7 @@ private fun IconPickerPopup(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(if (icon == currentIcon) IosTheme.colors.accent.copy(alpha = 0.2f) else Color.Transparent)
+                                .background(if (icon == currentIcon) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else Color.Transparent)
                                 .clickable { onSelect(icon) },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -1144,17 +1145,17 @@ private fun IconPickerPopup(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(IosTheme.colors.fieldBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .padding(horizontal = 8.dp, vertical = 5.dp),
                 ) {
                     if (customInput.isEmpty()) {
-                        Text("自定义Emoji", style = IosTheme.type.caption.copy(fontSize = 11.sp), color = IosTheme.colors.tertiaryLabel)
+                        Text("自定义Emoji", style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp), color = MaterialTheme.colorScheme.outline)
                     }
                     BasicTextField(
                         value = customInput,
                         onValueChange = { customInput = it.take(2) },
-                        textStyle = IosTheme.type.caption.copy(color = IosTheme.colors.label),
-                        cursorBrush = SolidColor(IosTheme.colors.accent),
+                        textStyle = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
@@ -1163,9 +1164,9 @@ private fun IconPickerPopup(
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = "确定",
-                        style = IosTheme.type.caption.copy(fontSize = 11.sp),
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
                         fontWeight = FontWeight.Bold,
-                        color = IosTheme.colors.accent,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .clickable { onSelect(customInput.trim()) }
                             .padding(4.dp),
@@ -1189,7 +1190,7 @@ private fun CategoryPickerSubDialog(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 24.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(IosTheme.colors.card),
+                .background(MaterialTheme.colorScheme.surfaceContainerLow),
         ) {
             Column(
                 modifier = Modifier
@@ -1203,15 +1204,15 @@ private fun CategoryPickerSubDialog(
                 ) {
                     Text(
                         text = "选择要添加的分类",
-                        style = IosTheme.type.headline,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = IosTheme.colors.label,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
                     Text(
                         text = "✕",
-                        style = IosTheme.type.body,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .clickable(onClick = onDismiss)
                             .padding(4.dp),
@@ -1234,7 +1235,7 @@ private fun CategoryPickerSubDialog(
                         ) {
                             val color = runCatching {
                                 cat.color?.takeIf { it.isNotBlank() }?.let { Color(android.graphics.Color.parseColor("#$it")) }
-                            }.getOrNull() ?: IosTheme.colors.accent
+                            }.getOrNull() ?: MaterialTheme.colorScheme.primary
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
@@ -1244,15 +1245,15 @@ private fun CategoryPickerSubDialog(
                             Spacer(Modifier.width(10.dp))
                             Text(
                                 text = cat.name,
-                                style = IosTheme.type.body,
-                                color = IosTheme.colors.label,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
                             if (cat.topicCount > 0) {
                                 Text(
                                     text = "${cat.topicCount} 帖",
-                                    style = IosTheme.type.caption,
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -1274,7 +1275,7 @@ private fun LevelBadgeChip(
     level: Int,
     onClick: () -> Unit,
 ) {
-    val isDark = IosTheme.colors.isDark
+    val isDark = AppTheme.isDark
     val shape = RoundedCornerShape(8.dp)
     val label = "Lv.$level"
 
@@ -1299,7 +1300,7 @@ private fun LevelBadgeChip(
             ) {
                 Text(
                     text = label,
-                    style = IosTheme.type.caption.copy(fontSize = 12.sp),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                     fontWeight = FontWeight.SemiBold,
                     color = contentColor,
                 )
@@ -1327,7 +1328,7 @@ private fun LevelBadgeChip(
             ) {
                 Text(
                     text = label,
-                    style = IosTheme.type.caption.copy(fontSize = 12.sp),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                     fontWeight = FontWeight.Bold,
                     color = contentColor,
                 )
@@ -1404,7 +1405,7 @@ private fun LevelBadgeChip(
                 Lv3CrownEmblem(gold = crownGold, shade = crownShade)
                 Text(
                     text = label,
-                    style = IosTheme.type.caption.copy(fontSize = 12.sp, letterSpacing = 0.2.sp),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp, letterSpacing = 0.2.sp),
                     fontWeight = FontWeight.ExtraBold,
                     color = textColor,
                 )

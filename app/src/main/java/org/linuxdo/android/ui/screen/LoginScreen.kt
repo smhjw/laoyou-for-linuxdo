@@ -1,5 +1,7 @@
 package org.linuxdo.android.ui.screen
 
+import org.linuxdo.android.ui.design.*
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -62,8 +64,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.scale
 import org.linuxdo.android.ui.LoginUiState
-import org.linuxdo.android.ui.design.IosActivityIndicator
-import org.linuxdo.android.ui.design.IosTheme
+import org.linuxdo.android.ui.design.LoadingIndicator
 
 private val GradientStart = Color(0xFFEEF2FF)
 private val GradientEnd   = Color(0xFFF5F0FF)
@@ -556,7 +557,7 @@ fun LoginScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 ) {
-                    IosActivityIndicator(diameter = 28.dp, color = AccentBlue)
+                    LoadingIndicator(diameter = 28.dp, color = AccentBlue)
                     Spacer(Modifier.height(16.dp))
                     Text(
                         state.webAuthMessage ?: "正在进行网页授权认证...",
@@ -741,7 +742,7 @@ private fun LoginButton(
         contentAlignment = Alignment.Center,
     ) {
         if (loading) {
-            IosActivityIndicator(diameter = 22.dp, color = Color.White)
+            LoadingIndicator(diameter = 22.dp, color = Color.White)
         } else {
             Text(
                 text,
@@ -776,7 +777,7 @@ private fun SendCodeButton(
         contentAlignment = Alignment.Center,
     ) {
         if (loading) {
-            IosActivityIndicator(diameter = 18.dp, color = Color.White)
+            LoadingIndicator(diameter = 18.dp, color = Color.White)
         } else {
             Text(
                 "获取验证码",
@@ -1020,7 +1021,7 @@ private fun WebAuthButton(
     ) {
         if (loading) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IosActivityIndicator(diameter = 18.dp, color = AccentBlue)
+                LoadingIndicator(diameter = 18.dp, color = AccentBlue)
                 Spacer(Modifier.width(8.dp))
                 Text(
                     "正在授权...",

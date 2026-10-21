@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui
 
+import org.linuxdo.android.ui.design.*
+import androidx.compose.material3.MaterialTheme
+
 import org.linuxdo.android.ui.screen.DiagnosticsScreen
 import org.linuxdo.android.ui.screen.DraftsScreen
 import org.linuxdo.android.ui.screen.ProfileScreen
@@ -62,10 +65,9 @@ import org.linuxdo.android.net.BrowserSession
 import org.linuxdo.android.Config
 import org.linuxdo.android.data.NotificationPollInterval
 import org.linuxdo.android.data.compactCategoryGroups
-import org.linuxdo.android.ui.design.IosActivityIndicator
-import org.linuxdo.android.ui.design.IosMetrics
-import org.linuxdo.android.ui.design.IosTheme
-import org.linuxdo.android.ui.nav.IosNavHost
+import org.linuxdo.android.ui.design.LoadingIndicator
+import org.linuxdo.android.ui.design.Dimens
+import org.linuxdo.android.ui.nav.AppNavHost
 import org.linuxdo.android.ui.nav.NavStack
 import org.linuxdo.android.ui.nav.Route
 import org.linuxdo.android.ui.screen.TopicListScreen
@@ -93,6 +95,7 @@ fun AppShell(viewModel: MainViewModel, browser: BrowserSession) {
     val showWeb = state.screen == Screen.Verify
     val showWebLoginModal = state.screen == Screen.Login && loginUiState.showWebLoginDialog
     val themeMode by viewModel.settings.themeMode.collectAsStateWithLifecycle()
+    val dynamicColor by viewModel.settings.dynamicColor.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
     val notificationPollInterval by viewModel.settings.notificationPollInterval.collectAsStateWithLifecycle()
@@ -127,11 +130,11 @@ fun AppShell(viewModel: MainViewModel, browser: BrowserSession) {
         ThemeMode.Light -> false
         ThemeMode.Dark -> true
     }
-    IosTheme(dark = dark) {
+    AppTheme(dark = dark, dynamicColor = dynamicColor) {
         Box(
             Modifier
                 .fillMaxSize()
-                .background(IosTheme.colors.groupedBackground)
+                .background(MaterialTheme.colorScheme.surface)
                 .systemBarsPadding()
                 .imePadding()
                 .clipToBounds(),
@@ -165,14 +168,14 @@ fun AppShell(viewModel: MainViewModel, browser: BrowserSession) {
                     modifier = Modifier
                         .fillMaxSize()
                         .zIndex(if (showWeb) 2f else -1f)
-                        .then(if (showWeb) Modifier.background(IosTheme.colors.groupedBackground) else Modifier),
+                        .then(if (showWeb) Modifier.background(MaterialTheme.colorScheme.surface) else Modifier),
                     contentAlignment = Alignment.TopCenter,
                 ) {
                     Column(
                         modifier = if (showWeb) {
                             Modifier
                                 .fillMaxSize()
-                                .padding(top = IosMetrics.navBarHeight)
+                                .padding(top = Dimens.navBarHeight)
                         } else {
                             Modifier.fillMaxSize()
                         },
@@ -379,7 +382,7 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
         Box(Modifier.weight(1f)) {
             holder.SaveableStateProvider(selected.name) {
                 key(selected) {
-                    IosNavHost(stack, interactive = browsing && !topicCreator.open) { route ->
+                    AppNavHost(stack, interactive = browsing && !topicCreator.open) { route ->
                         val active = browsing && stack.current == route
                         LaunchedEffect(route, active) {
                             if (active) when (route) {
@@ -773,9 +776,9 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
 @Composable
 private fun BootScreen() {
     Box(
-        Modifier.fillMaxSize().background(IosTheme.colors.groupedBackground),
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
         contentAlignment = Alignment.Center,
     ) {
-        IosActivityIndicator(diameter = 28.dp)
+        LoadingIndicator(diameter = 28.dp)
     }
 }

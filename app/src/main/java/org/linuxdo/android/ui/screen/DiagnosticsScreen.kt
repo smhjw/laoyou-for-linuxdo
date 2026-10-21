@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui.screen
 
+import org.linuxdo.android.ui.design.*
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
@@ -37,16 +40,15 @@ import java.util.Date
 import org.linuxdo.android.Config
 import org.linuxdo.android.service.NotificationHelper
 import org.linuxdo.android.net.NetworkPath
-import org.linuxdo.android.ui.design.IosDivider
-import org.linuxdo.android.ui.design.IosGroupCard
+import org.linuxdo.android.ui.design.ListDivider
+import org.linuxdo.android.ui.design.SectionCard
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
-import org.linuxdo.android.ui.design.IosLargeTitleScaffold
-import org.linuxdo.android.ui.design.IosMetrics
-import org.linuxdo.android.ui.design.IosRow
-import org.linuxdo.android.ui.design.IosTheme
+import org.linuxdo.android.ui.design.AppScaffold
+import org.linuxdo.android.ui.design.Dimens
+import org.linuxdo.android.ui.design.ListRow
 import androidx.compose.ui.text.font.FontWeight
 import android.widget.Toast
 import org.linuxdo.android.ui.*
@@ -71,31 +73,31 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
     var zeroDohPocRunning by remember { mutableStateOf(false) }
     val zeroDohPocScope = androidx.compose.runtime.rememberCoroutineScope()
 
-    IosLargeTitleScaffold(title = "开发者选项", onBack = onBack) {
+    AppScaffold(title = "开发者选项", onBack = onBack) {
         item(key = "paths") {
             SectionTitle("网络路径")
-            IosGroupCard {
+            SectionCard {
                 NetworkPath.entries.forEachIndexed { index, path ->
-                    IosRow(onClick = { viewModel.setPath(path) }) {
+                    ListRow(onClick = { viewModel.setPath(path) }) {
                         Text(
                             text = path.label,
-                            style = IosTheme.type.body,
-                            color = IosTheme.colors.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
                         )
                         if (state.path == path) {
-                            Text("使用中", style = IosTheme.type.subheadline, color = IosTheme.colors.accent)
+                            Text("使用中", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                         }
                     }
-                    if (index < NetworkPath.entries.lastIndex) IosDivider()
+                    if (index < NetworkPath.entries.lastIndex) ListDivider()
                 }
             }
         }
 
         item(key = "zero-doh-lab") {
             SectionTitle("网络直连实验")
-            IosGroupCard {
-                IosRow(onClick = {
+            SectionCard {
+                ListRow(onClick = {
                     if (zeroDohPocRunning) {
                         Toast.makeText(context, "正在验证中，请稍候…", Toast.LENGTH_SHORT).show()
                     } else {
@@ -111,18 +113,18 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("零 DoH 直连可行性验证", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                        Text("零 DoH 直连可行性验证", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                         Text(
                             "验证 Anycast 零 DNS 直连、ECH 存活性、WebView 代理导流与 ClientHello 分片",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
                     Text(
                         if (zeroDohPocRunning) "验证中…" else "开始验证 ›",
-                        style = IosTheme.type.subheadline,
-                        color = IosTheme.colors.accent,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -130,12 +132,12 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
 
         item(key = "actions") {
             SectionTitle("操作")
-            IosGroupCard {
-                IosRow {
+            SectionCard {
+                ListRow {
                     Text(
                         text = "自动刷新(${Config.AUTO_REFRESH_INTERVAL_MS / 60_000} 分钟)",
-                        style = IosTheme.type.body,
-                        color = IosTheme.colors.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
                     Switch(
@@ -143,55 +145,55 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
                         onCheckedChange = { viewModel.toggleAutoRefresh() },
                         colors = SwitchDefaults.colors(
                             // iOS 的开关轨道是 systemGreen。
-                            checkedTrackColor = Color(0xFF34C759),
+                            checkedTrackColor = AppTheme.colors.success,
                             checkedThumbColor = Color.White,
                         ),
                     )
                 }
-                IosDivider()
-                IosRow(onClick = viewModel::retryLatest) {
-                    Text("立即刷新列表", style = IosTheme.type.body, color = IosTheme.colors.accent)
+                ListDivider()
+                ListRow(onClick = viewModel::retryLatest) {
+                    Text("立即刷新列表", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
                 }
-                IosDivider()
-                IosRow(onClick = {
+                ListDivider()
+                ListRow(onClick = {
                     NotificationHelper.recordDiagnosticSnapshot(context)
                     Toast.makeText(context, "推送与角标状态已记录到下方日志", Toast.LENGTH_SHORT).show()
                 }) {
-                    Text("记录推送与角标状态", style = IosTheme.type.body, color = IosTheme.colors.accent)
+                    Text("记录推送与角标状态", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
                 }
-                IosDivider()
-                IosRow(onClick = {
+                ListDivider()
+                ListRow(onClick = {
                     val latestLines = viewModel.diagnostics.readLatestLines(300)
                     context.getSystemService(android.content.ClipboardManager::class.java)
                         ?.setPrimaryClip(android.content.ClipData.newPlainText("LinuxDo 诊断日志", latestLines.joinToString("\n")))
                     Toast.makeText(context, "已复制最新${latestLines.size}行日志", Toast.LENGTH_SHORT).show()
                 }) {
-                    Text("复制当前日志", style = IosTheme.type.body, color = IosTheme.colors.accent)
+                    Text("复制当前日志", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
                 }
-                IosDivider()
-                IosRow(onClick = viewModel::logout) {
-                    Text("登出并清除 Cookie", style = IosTheme.type.body, color = IosTheme.colors.destructive)
+                ListDivider()
+                ListRow(onClick = viewModel::logout) {
+                    Text("登出并清除 Cookie", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
                 }
             }
         }
 
         item(key = "session") {
             SectionTitle("会话诊断")
-            IosGroupCard {
+            SectionCard {
                 InfoRow("当前用户", state.username ?: "未确认")
-                IosDivider()
+                ListDivider()
                 InfoRow("最近路径", stats.lastPath)
-                IosDivider()
+                ListDivider()
                 InfoRow("最近状态码", stats.lastStatus?.toString() ?: "-")
-                IosDivider()
+                ListDivider()
                 InfoRow("静默重验次数", stats.silentRevalidations.toString())
-                IosDivider()
+                ListDivider()
                 InfoRow("需交互验证次数", stats.interactiveRequired.toString())
-                IosDivider()
+                ListDivider()
                 InfoRow("Cookie", state.cookieNames.joinToString(", ").ifEmpty { "无" })
-                IosDivider()
+                ListDivider()
                 InfoRow("Cookie 更新于", savedAt)
-                IosDivider()
+                ListDivider()
                 InfoRow("User-Agent", state.userAgent)
             }
         }
@@ -203,10 +205,10 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
                 text = line,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 10.sp,
-                color = IosTheme.colors.secondaryLabel,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = IosMetrics.screenPadding, vertical = 2.dp),
+                    .padding(horizontal = Dimens.screenPadding, vertical = 2.dp),
             )
         }
         item(key = "log-tail") { Spacer(Modifier.height(32.dp)) }
@@ -218,27 +220,27 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
                 modifier = Modifier
                     .widthIn(min = 290.dp, max = 350.dp)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(IosTheme.colors.card)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text("零 DoH 可行性验证报告", style = IosTheme.type.headline, fontWeight = FontWeight.Bold)
+                Text("零 DoH 可行性验证报告", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
                     "完整报告同时写入 logcat，可用 adb logcat -s ZeroDohPoc:I 取回",
-                    style = IosTheme.type.caption,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     report,
-                    style = IosTheme.type.caption,
+                    style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier
                         .heightIn(max = 420.dp)
                         .verticalScroll(rememberScrollState()),
                 )
                 Text(
                     "关闭",
-                    style = IosTheme.type.subheadline,
-                    color = IosTheme.colors.accent,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .align(Alignment.End)
@@ -254,11 +256,11 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
 internal fun SectionTitle(text: String) {
     Text(
         text = text,
-        style = IosTheme.type.footnote,
-        color = IosTheme.colors.secondaryLabel,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(
-            start = IosMetrics.screenPadding + 16.dp,
-            end = IosMetrics.screenPadding,
+            start = Dimens.screenPadding + 16.dp,
+            end = Dimens.screenPadding,
             top = 24.dp,
             bottom = 6.dp,
         ),
@@ -267,17 +269,17 @@ internal fun SectionTitle(text: String) {
 
 @Composable
 private fun InfoRow(label: String, value: String) {
-    IosRow {
+    ListRow {
         Text(
             text = label,
-            style = IosTheme.type.body,
-            color = IosTheme.colors.label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(Modifier.width(12.dp))
         Text(
             text = value,
-            style = IosTheme.type.subheadline,
-            color = IosTheme.colors.secondaryLabel,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
     }

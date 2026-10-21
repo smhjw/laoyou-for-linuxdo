@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui.screen
 
+import org.linuxdo.android.ui.design.*
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,9 +33,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.linuxdo.android.ui.design.avatarShape
-import org.linuxdo.android.ui.design.IosActivityIndicator
-import org.linuxdo.android.ui.design.IosTheme
-import org.linuxdo.android.ui.design.IosLoadingBox
+import org.linuxdo.android.ui.design.LoadingIndicator
+import org.linuxdo.android.ui.design.LoadingBox
 import coil.compose.AsyncImage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -47,7 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.linuxdo.android.data.Category
 import org.linuxdo.android.data.DraftItem
 import org.linuxdo.android.data.avatarUrlOf
-import org.linuxdo.android.ui.design.IosNavBar
+import org.linuxdo.android.ui.design.AppTopBar
 import org.linuxdo.android.ui.format.RelativeTime
 import org.linuxdo.android.ui.*
 
@@ -69,12 +71,12 @@ fun DraftsScreen(
     Column(
         Modifier
             .fillMaxSize()
-            .background(IosTheme.colors.groupedBackground),
+            .background(MaterialTheme.colorScheme.surface),
     ) {
-        IosNavBar(
+        AppTopBar(
             title = "我的草稿",
             onBack = onBack,
-            trailing = trailing,
+            trailing = { trailing() },
         )
 
         PullToRefreshBox(
@@ -89,7 +91,7 @@ fun DraftsScreen(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 if (state.loading && !state.loaded) {
-                    item("loading") { IosLoadingBox() }
+                    item("loading") { LoadingBox() }
                 }
 
                 state.error?.let { message ->
@@ -109,14 +111,14 @@ fun DraftsScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     text = "暂无保存的草稿",
-                                    style = IosTheme.type.headline,
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Text(
                                     text = "在发帖界面点击“保存”即可将草稿存放在这里",
-                                    style = IosTheme.type.footnote,
-                                    color = IosTheme.colors.tertiaryLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.outline,
                                 )
                             }
                         }
@@ -158,7 +160,7 @@ fun DraftsScreen(
                         onDeleteDraft(toDelete)
                     },
                 ) {
-                    Text("删除", color = IosTheme.colors.destructive)
+                    Text("删除", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -205,8 +207,8 @@ private fun DraftCard(
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(IosTheme.colors.card)
-            .border(0.5.dp, IosTheme.colors.separator.copy(alpha = 0.45f), RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), RoundedCornerShape(14.dp))
             .clickable(enabled = !isDeleting, onClick = onEdit)
             .padding(14.dp),
     ) {
@@ -229,13 +231,13 @@ private fun DraftCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(IosTheme.colors.accent.copy(alpha = 0.14f)),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = draft.username?.firstOrNull()?.uppercase() ?: "草",
-                            style = IosTheme.type.headline,
-                            color = IosTheme.colors.accent,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -249,8 +251,8 @@ private fun DraftCard(
                     ) {
                         Text(
                             text = displayTitle,
-                            style = IosTheme.type.headline.copy(fontSize = 16.sp),
-                            color = IosTheme.colors.label,
+                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp),
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
@@ -259,8 +261,8 @@ private fun DraftCard(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = timeText,
-                                style = IosTheme.type.caption,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -275,19 +277,19 @@ private fun DraftCard(
                             Box(
                                 Modifier
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(IosTheme.colors.accent.copy(alpha = 0.12f))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                                     .padding(horizontal = 6.dp, vertical = 2.dp),
                             ) {
                                 Text(
                                     text = if (draft.replyToPostNumber != null) "回复 #${draft.replyToPostNumber}" else "回复草稿",
-                                    style = IosTheme.type.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
-                                    color = IosTheme.colors.accent,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.primary,
                                 )
                             }
                         } else if (category != null) {
                             val baseName = categoryBaseNameOf(category.name)
                             val level = categoryLevelOf(category)
-                            val dotColor = parseCategoryColor(category.color) ?: IosTheme.colors.accent
+                            val dotColor = parseCategoryColor(category.color) ?: MaterialTheme.colorScheme.primary
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(vertical = 1.dp),
@@ -301,12 +303,12 @@ private fun DraftCard(
                                 Spacer(Modifier.width(5.dp))
                                 Text(
                                     text = baseName,
-                                    style = IosTheme.type.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 if (level > 0) {
                                     Spacer(Modifier.width(5.dp))
-                                    val (pillBg, _, pillFg) = levelPillColors(level, IosTheme.colors.isDark)
+                                    val (pillBg, _, pillFg) = levelPillColors(level, AppTheme.isDark)
                                     Box(
                                         Modifier
                                             .clip(RoundedCornerShape(4.dp))
@@ -315,7 +317,7 @@ private fun DraftCard(
                                     ) {
                                         Text(
                                             text = "Lv.$level",
-                                            style = IosTheme.type.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                                            style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
                                             color = pillFg,
                                         )
                                     }
@@ -324,8 +326,8 @@ private fun DraftCard(
                         } else {
                             Text(
                                 text = "未选择分类",
-                                style = IosTheme.type.caption.copy(fontSize = 12.sp),
-                                color = IosTheme.colors.tertiaryLabel,
+                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                color = MaterialTheme.colorScheme.outline,
                             )
                         }
 
@@ -333,13 +335,13 @@ private fun DraftCard(
                             Box(
                                 Modifier
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(IosTheme.colors.fieldBackground)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                                     .padding(horizontal = 6.dp, vertical = 2.dp),
                             ) {
                                 Text(
                                     text = tag,
-                                    style = IosTheme.type.caption.copy(fontSize = 11.sp),
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -351,8 +353,8 @@ private fun DraftCard(
                 Spacer(Modifier.height(10.dp))
                 Text(
                     text = summaryText,
-                    style = IosTheme.type.subheadline.copy(lineHeight = 20.sp),
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -369,11 +371,11 @@ private fun DraftCard(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(IosTheme.colors.fieldBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .clickable(enabled = !isDeleting, onClick = onEdit),
                     contentAlignment = Alignment.Center,
                 ) {
-                    PostActionIcon(PostAction.Edit, selected = false, tint = IosTheme.colors.secondaryLabel)
+                    PostActionIcon(PostAction.Edit, selected = false, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 Spacer(Modifier.width(10.dp))
@@ -382,14 +384,14 @@ private fun DraftCard(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFFF4D4F).copy(alpha = 0.14f))
+                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f))
                         .clickable(enabled = !isDeleting, onClick = onDelete),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (isDeleting) {
-                        IosActivityIndicator(diameter = 14.dp, color = Color(0xFFFF4D4F))
+                        LoadingIndicator(diameter = 14.dp, color = MaterialTheme.colorScheme.error)
                     } else {
-                        PostActionIcon(PostAction.Delete, selected = false, tint = Color(0xFFFF4D4F))
+                        PostActionIcon(PostAction.Delete, selected = false, tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }

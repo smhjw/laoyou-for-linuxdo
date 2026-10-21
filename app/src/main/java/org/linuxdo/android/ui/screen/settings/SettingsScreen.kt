@@ -1,5 +1,9 @@
 package org.linuxdo.android.ui.screen.settings
 
+import org.linuxdo.android.ui.design.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+
 import android.content.Context
 import android.Manifest
 import android.content.pm.PackageManager
@@ -52,17 +56,15 @@ import org.linuxdo.android.data.NotificationPollInterval
 import org.linuxdo.android.data.NotificationScope
 import org.linuxdo.android.net.DohServer
 import org.linuxdo.android.net.DohPresets
-import org.linuxdo.android.ui.design.IosDivider
-import org.linuxdo.android.ui.design.IosGroupCard
+import org.linuxdo.android.ui.design.ListDivider
+import org.linuxdo.android.ui.design.SectionCard
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
-import org.linuxdo.android.ui.design.IosActivityIndicator
-import org.linuxdo.android.ui.design.IosLargeTitleScaffold
-import org.linuxdo.android.ui.design.IosMetrics
-import org.linuxdo.android.ui.design.IosRow
-import org.linuxdo.android.ui.design.IosTheme
-import org.linuxdo.android.ui.design.IosSwitch
+import org.linuxdo.android.ui.design.LoadingIndicator
+import org.linuxdo.android.ui.design.AppScaffold
+import org.linuxdo.android.ui.design.Dimens
+import org.linuxdo.android.ui.design.ListRow
 import org.linuxdo.android.ui.nav.SettingsPage
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.font.FontWeight
@@ -215,29 +217,28 @@ fun SettingsScreen(
         }
     }
 
-    IosLargeTitleScaffold(
+    AppScaffold(
         title = page?.title ?: "设置",
         onBack = onBack,
-        showLargeTitle = false,
-        backLabel = "",
+        showLargeTitle = page != null,
     ) {
         // ── 首页只列品目入口，具体设置项点进子页再展开；版本信息与退出账号在列表末尾 ──
         if (page == null) item("entries-general") {
             Spacer(Modifier.height(20.dp))
-            IosGroupCard {
+            SectionCard {
                 SettingsEntryRow(
                     title = SettingsPage.Appearance.title,
                     badgeColor = Color(0xFFEEEDFC),
                     value = themeMode.label,
                     onClick = { onOpenPage(SettingsPage.Appearance) },
                 ) { SettingAppearanceIcon(tint = Color(0xFF5856D6)) }
-                IosDivider()
+                ListDivider()
                 SettingsEntryRow(
                     title = SettingsPage.Reading.title,
                     badgeColor = Color(0xFFFFF4E5),
                     onClick = { onOpenPage(SettingsPage.Reading) },
-                ) { SettingBookIcon(tint = Color(0xFFFF9500)) }
-                IosDivider()
+                ) { SettingBookIcon(tint = AppTheme.colors.warning) }
+                ListDivider()
                 SettingsEntryRow(
                     title = SettingsPage.FloatingBall.title,
                     badgeColor = Color(0xFFF3E5F5),
@@ -249,33 +250,33 @@ fun SettingsScreen(
 
         if (page == null) item("entries-system") {
             Spacer(Modifier.height(20.dp))
-            IosGroupCard {
+            SectionCard {
                 SettingsEntryRow(
                     title = SettingsPage.Notifications.title,
                     badgeColor = Color(0xFFFFF0F5),
                     value = if (backgroundNotification) "已开启" else "已关闭",
                     onClick = { onOpenPage(SettingsPage.Notifications) },
                 ) { SettingBellIcon(tint = Color(0xFFFF2D55)) }
-                IosDivider()
+                ListDivider()
                 SettingsEntryRow(
                     title = SettingsPage.Network.title,
                     badgeColor = Color(0xFFE3F5E8),
                     value = if (dohEnabled) "DoH 已开启" else "DoH 已关闭",
                     onClick = { onOpenPage(SettingsPage.Network) },
-                ) { SettingDohIcon(tint = Color(0xFF34C759)) }
+                ) { SettingDohIcon(tint = AppTheme.colors.success) }
             }
         }
 
         // ── 1. 外观 ──
         if (page == SettingsPage.Appearance) item("group-appearance") {
             SectionTitle("主题")
-            IosGroupCard {
+            SectionCard {
                 ThemeMode.entries.forEachIndexed { index, mode ->
-                    if (index > 0) IosDivider()
-                    IosRow(onClick = { onThemeMode(mode) }) {
-                        Text(mode.label, style = IosTheme.type.body, modifier = Modifier.weight(1f))
+                    if (index > 0) ListDivider()
+                    ListRow(onClick = { onThemeMode(mode) }) {
+                        Text(mode.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                         if (themeMode == mode) {
-                            Text("✓", color = IosTheme.colors.accent, fontWeight = FontWeight.Bold)
+                            Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -285,74 +286,74 @@ fun SettingsScreen(
         // ── 2. 阅读与浏览 ──
         if (page == SettingsPage.Reading) item("group-reading") {
             SectionTitle("阅读偏好")
-            IosGroupCard {
+            SectionCard {
                 // 2.1 树形查看话题
-                IosRow(onClick = { onTreeView(!treeView) }) {
+                ListRow(onClick = { onTreeView(!treeView) }) {
                     SettingIconBadge(bgColor = Color(0xFFE8F3FF)) {
-                        SettingTreeIcon(tint = Color(0xFF007AFF))
+                        SettingTreeIcon(tint = MaterialTheme.colorScheme.primary)
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("树形查看话题", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                        Text("树形查看话题", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                         Text(
                             "按回复树状排列，关闭后恢复顺序楼层",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
-                    IosSwitch(checked = treeView, onCheckedChange = onTreeView)
+                    Switch(checked = treeView, onCheckedChange = onTreeView)
                 }
 
-                IosDivider()
+                ListDivider()
 
                 // 2.2 同步楼层与阅读时长
-                IosRow(onClick = { handleSyncToggle(!syncReadProgress) }) {
+                ListRow(onClick = { handleSyncToggle(!syncReadProgress) }) {
                     SettingIconBadge(bgColor = Color(0xFFF0EDFF)) {
                         SettingClockIcon(tint = Color(0xFF6C5CE7))
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("同步楼层与阅读时长", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                        Text("同步楼层与阅读时长", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                         Text(
                             "在后台实时记录阅读位置与社区足迹",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
-                    IosSwitch(checked = syncReadProgress, onCheckedChange = handleSyncToggle)
+                    Switch(checked = syncReadProgress, onCheckedChange = handleSyncToggle)
                 }
 
-                IosDivider()
+                ListDivider()
 
                 // 2.3 自动感知新话题频率
-                IosRow(onClick = { showAutoRefreshIntervalDialog = true }) {
+                ListRow(onClick = { showAutoRefreshIntervalDialog = true }) {
                     SettingIconBadge(bgColor = Color(0xFFE5F9E7)) {
-                        SettingBroomIcon(tint = Color(0xFF34C759))
+                        SettingBroomIcon(tint = AppTheme.colors.success)
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("自动感知新话题", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                        Text("自动感知新话题", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                         Text(
                             "停留在列表时静默探测并提示新话题",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
                     Text(
                         "${autoRefreshInterval.label} ›",
-                        style = IosTheme.type.subheadline,
-                        color = if (autoRefreshInterval != AutoRefreshInterval.OFF) IosTheme.colors.accent else IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (autoRefreshInterval != AutoRefreshInterval.OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 if (syncReadProgress && readingStatus != null) {
-                    IosDivider()
-                    IosRow(onClick = { if (canRetryReading) onRetryReading() }) {
-                        Text(readingStatus, style = IosTheme.type.footnote, modifier = Modifier.weight(1f))
-                        if (canRetryReading) Text("继续", color = IosTheme.colors.accent)
+                    ListDivider()
+                    ListRow(onClick = { if (canRetryReading) onRetryReading() }) {
+                        Text(readingStatus, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                        if (canRetryReading) Text("继续", color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -361,44 +362,44 @@ fun SettingsScreen(
         // ── 2.5 辅助悬浮按钮设置 ──
         if (page == SettingsPage.FloatingBall) item("group-floating-ball") {
             SectionTitle("辅助功能")
-            IosGroupCard {
-                IosRow(onClick = { onFloatingBallEnabled(!floatingBallEnabled) }) {
+            SectionCard {
+                ListRow(onClick = { onFloatingBallEnabled(!floatingBallEnabled) }) {
                     SettingIconBadge(bgColor = Color(0xFFF3E5F5)) {
                         SettingFloatingBallIcon(tint = Color(0xFFAB47BC))
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("开启辅助悬浮球", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                        Text("开启辅助悬浮球", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                         Text(
                             "单功能直接点击直达，多功能伞型展开；可拖动吸附贴边并记录坐标",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
-                    IosSwitch(
+                    Switch(
                         checked = floatingBallEnabled,
                         onCheckedChange = onFloatingBallEnabled,
                     )
                 }
 
                 if (floatingBallEnabled) {
-                    IosDivider()
+                    ListDivider()
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             "功能配置与排序 (${floatingBallActions.size}/5)",
-                            style = IosTheme.type.footnote.copy(fontWeight = FontWeight.SemiBold),
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f),
                         )
                         if (floatingBallActions != FloatingAction.DEFAULT_ACTIONS) {
                             Text(
                                 "恢复默认",
-                                style = IosTheme.type.caption.copy(fontWeight = FontWeight.Medium),
-                                color = IosTheme.colors.accent,
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.clickable { onFloatingBallActions(FloatingAction.DEFAULT_ACTIONS) },
                             )
                         }
@@ -415,7 +416,7 @@ fun SettingsScreen(
                         val isFirstInEnabled = isActionEnabled && index == 0
                         val isLastInEnabled = isActionEnabled && index == floatingBallActions.lastIndex
 
-                        IosDivider(startIndent = 16.dp)
+                        ListDivider(startIndent = 16.dp)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -478,16 +479,16 @@ fun SettingsScreen(
 
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(action.title, style = IosTheme.type.body.copy(fontWeight = FontWeight.Medium))
-                                Text(action.description, style = IosTheme.type.caption, color = IosTheme.colors.secondaryLabel)
+                                Text(action.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium))
+                                Text(action.description, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
 
                             if (isActionEnabled) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         "↑",
-                                        style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Bold),
-                                        color = if (!isFirstInEnabled) IosTheme.colors.accent else IosTheme.colors.tertiaryLabel,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = if (!isFirstInEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
                                             .clickable(enabled = !isFirstInEnabled) {
@@ -504,8 +505,8 @@ fun SettingsScreen(
                                     )
                                     Text(
                                         "↓",
-                                        style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Bold),
-                                        color = if (!isLastInEnabled) IosTheme.colors.accent else IosTheme.colors.tertiaryLabel,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = if (!isLastInEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
                                             .clickable(enabled = !isLastInEnabled) {
@@ -524,7 +525,7 @@ fun SettingsScreen(
                                 Spacer(Modifier.width(4.dp))
                             }
 
-                            IosSwitch(
+                            Switch(
                                 checked = isActionEnabled,
                                 onCheckedChange = { checked ->
                                     if (checked) {
@@ -549,9 +550,9 @@ fun SettingsScreen(
         // ── 3. 通知与后台保活 ──
         if (page == SettingsPage.Notifications) item("group-notifications") {
             SectionTitle("通知")
-            IosGroupCard {
+            SectionCard {
                 // 3.0 后台通知总开关
-                IosRow(onClick = {
+                ListRow(onClick = {
                     val next = !backgroundNotification
                     if (next) {
                         ensureNotificationPermission()
@@ -564,15 +565,15 @@ fun SettingsScreen(
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("允许后台通知", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                        Text("允许后台通知", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                         Text(
                             "亮屏实时推送，息屏智能切换系统低功耗唤醒",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
-                    IosSwitch(
+                    Switch(
                         checked = backgroundNotification,
                         onCheckedChange = { next ->
                             if (next) {
@@ -585,76 +586,76 @@ fun SettingsScreen(
                 }
 
                 if (backgroundNotification) {
-                    IosDivider()
+                    ListDivider()
 
                     // 系统通知权限与横幅直达
                     val isSystemNotificationEnabled = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
                     if (!isSystemNotificationEnabled) {
-                        IosRow(onClick = { NotificationHelper.openNotificationSettings(context) }) {
+                        ListRow(onClick = { NotificationHelper.openNotificationSettings(context) }) {
                             SettingIconBadge(bgColor = Color(0xFFFFEBEE)) {
                                 SettingInfoIcon(tint = Color(0xFFD32F2F))
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("系统通知权限未开启", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold, color = Color(0xFFD32F2F))
+                                Text("系统通知权限未开启", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFFD32F2F))
                                 Text(
                                     "手机系统屏蔽了此应用通知，点击前往开启通知总开关与横幅提醒",
-                                    style = IosTheme.type.footnote,
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(top = 3.dp),
                                 )
                             }
-                            Text("去开启 ›", style = IosTheme.type.subheadline, color = Color(0xFFD32F2F))
+                            Text("去开启 ›", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFD32F2F))
                         }
                     } else {
-                        IosRow(onClick = { NotificationHelper.openNotificationSettings(context) }) {
+                        ListRow(onClick = { NotificationHelper.openNotificationSettings(context) }) {
                             SettingIconBadge(bgColor = Color(0xFFE8F5E9)) {
                                 SettingTreeIcon(tint = Color(0xFF4CAF50))
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("系统通知与横幅设置", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                                Text("系统通知与横幅设置", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                                 Text(
                                     "管理顶部横幅浮窗、锁屏显示与铃声震动，也可关闭常驻静音图标",
-                                    style = IosTheme.type.footnote,
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(top = 3.dp),
                                 )
                             }
-                            Text("已开启 ›", style = IosTheme.type.subheadline, color = IosTheme.colors.secondaryLabel)
+                            Text("已开启 ›", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
 
 
-                    IosDivider()
+                    ListDivider()
 
                     // 通知推送范围
-                    IosRow(onClick = { showNotificationScopeDialog = true }) {
+                    ListRow(onClick = { showNotificationScopeDialog = true }) {
                         SettingIconBadge(bgColor = Color(0xFFE8EAF6)) {
                             SettingTreeIcon(tint = Color(0xFF3F51B5))
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("通知推送范围", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                            Text("通知推送范围", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                             Text(
                                 notificationScope.description,
-                                style = IosTheme.type.footnote,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 3.dp),
                             )
                         }
                         Text(
                             "${notificationScope.label} ›",
-                            style = IosTheme.type.subheadline,
-                            color = IosTheme.colors.accent,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
 
-                    IosDivider()
+                    ListDivider()
 
                     // 测试通知推送（全场景实测实验室）
-                    IosRow(onClick = {
+                    ListRow(onClick = {
                         if (!androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()) {
                             Toast.makeText(context, "系统通知权限尚未开启，请在设置中允许通知", Toast.LENGTH_LONG).show()
                             NotificationHelper.openNotificationSettings(context)
@@ -667,15 +668,15 @@ fun SettingsScreen(
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("测试通知推送 (全场景实测)", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                            Text("测试通知推送 (全场景实测)", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                             Text(
                                 "验证息屏浅睡、Doze 闹钟硬件唤醒、亮屏抢跑、单帖正文拉取与桌面角标增减",
-                                style = IosTheme.type.footnote,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 3.dp),
                             )
                         }
-                        Text("实测实验室 ›", style = IosTheme.type.subheadline, color = IosTheme.colors.accent)
+                        Text("实测实验室 ›", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -688,29 +689,29 @@ fun SettingsScreen(
                 ) {
                     Text(
                         text = "休眠推送保活",
-                        style = IosTheme.type.footnote,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Medium,
                     )
                     Spacer(Modifier.width(8.dp))
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(Color(0xFFFF9500).copy(alpha = 0.14f))
+                            .background(AppTheme.colors.warning.copy(alpha = 0.14f))
                             .padding(horizontal = 6.dp, vertical = 2.dp),
                     ) {
                         Text(
                             text = "休眠状态推送建议开启",
-                            style = IosTheme.type.caption.copy(fontSize = 11.sp),
-                            color = Color(0xFFFF9500),
+                            style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                            color = AppTheme.colors.warning,
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
                 }
 
-                IosGroupCard {
+                SectionCard {
                     // 1. 电池优化直达配置
-                    IosRow(onClick = {
+                    ListRow(onClick = {
                         NotificationHelper.requestIgnoreBatteryOptimizations(context)
                     }) {
                         SettingIconBadge(bgColor = Color(0xFFFFF8E1)) {
@@ -718,25 +719,25 @@ fun SettingsScreen(
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("电池优化 (设为不允许)", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                            Text("电池优化 (设为不允许)", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                             Text(
                                 if (isBatteryOptimizedIgnored) "已加入电池优化白名单，息屏不被系统睡眠冻结" else "设为“不允许 / 无限制”，防止息屏被系统休眠挂起",
-                                style = IosTheme.type.footnote,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 3.dp),
                             )
                         }
                         if (isBatteryOptimizedIgnored) {
-                            Text("已允许 ✓", style = IosTheme.type.subheadline, color = Color(0xFF34C759), fontWeight = FontWeight.Medium)
+                            Text("已允许 ✓", style = MaterialTheme.typography.bodyMedium, color = AppTheme.colors.success, fontWeight = FontWeight.Medium)
                         } else {
-                            Text("去设置 ›", style = IosTheme.type.subheadline, color = Color(0xFFFF9500), fontWeight = FontWeight.SemiBold)
+                            Text("去设置 ›", style = MaterialTheme.typography.bodyMedium, color = AppTheme.colors.warning, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
-                    IosDivider()
+                    ListDivider()
 
                     // 2. 应用启动管理直达配置
-                    IosRow(onClick = {
+                    ListRow(onClick = {
                         Toast.makeText(context, "请在系统中将本应用设为“手动管理”，允许自启动与后台活动", Toast.LENGTH_LONG).show()
                         NotificationHelper.openAutoStartSettings(context)
                     }) {
@@ -745,21 +746,21 @@ fun SettingsScreen(
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("应用启动管理 (后台自启)", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                            Text("应用启动管理 (后台自启)", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                             Text(
                                 "设为手动管理：允许自启动与后台活动，防止灭屏被杀",
-                                style = IosTheme.type.footnote,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 3.dp),
                             )
                         }
-                        Text("去配置 ›", style = IosTheme.type.subheadline, color = IosTheme.colors.accent)
+                        Text("去配置 ›", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                     }
 
-                    IosDivider()
+                    ListDivider()
 
                     // 3. 休眠网络与电池设置
-                    IosRow(onClick = {
+                    ListRow(onClick = {
                         Toast.makeText(context, "请检查是否开启“休眠时始终保持网络连接”，避免息屏断网", Toast.LENGTH_LONG).show()
                         NotificationHelper.openPowerSettings(context)
                     }) {
@@ -768,22 +769,22 @@ fun SettingsScreen(
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("休眠保持网络连接", style = IosTheme.type.body, fontWeight = FontWeight.SemiBold)
+                            Text("休眠保持网络连接", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                             Text(
                                 "在系统电池高级设置中开启“休眠时始终保持网络连接”，避免断网",
-                                style = IosTheme.type.footnote,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 3.dp),
                             )
                         }
-                        Text("去检查 ›", style = IosTheme.type.subheadline, color = IosTheme.colors.secondaryLabel)
+                        Text("去检查 ›", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
                 Text(
                     text = "💡 提示：若仅需亮屏使用时接收通知，上述三项可保持系统默认以最大化省电；若需手机息屏深睡下稳定接收，建议全部配置并在多任务后台锁定本应用。",
-                    style = IosTheme.type.footnote,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
                 )
             }
@@ -805,87 +806,87 @@ fun SettingsScreen(
             }
 
             SectionTitle("DoH 安全直连")
-            IosGroupCard {
+            SectionCard {
                 // VPN 开启提示
                 if (isVpnActive) {
-                    IosRow(onClick = {}) {
+                    ListRow(onClick = {}) {
                         SettingIconBadge(bgColor = Color(0xFFFFF3E0)) {
-                            SettingInfoIcon(tint = Color(0xFFFF9500))
+                            SettingInfoIcon(tint = AppTheme.colors.warning)
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(
                                 "已检测到 VPN / 系统代理",
-                                style = IosTheme.type.body,
+                                style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFFFF9500),
+                                color = AppTheme.colors.warning,
                             )
                             Text(
                                 "系统代理已接管全局网络，建议保持系统代理分流；断开代理后可继续使用 DoH 直连",
-                                style = IosTheme.type.footnote,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 2.dp),
                             )
                         }
                     }
-                    IosDivider()
+                    ListDivider()
                 }
 
                 // 开关行
-                IosRow(onClick = {}) {
+                ListRow(onClick = {}) {
                     SettingIconBadge(bgColor = Color(0xFFE3F5E8)) {
-                        SettingDohIcon(tint = Color(0xFF34C759))
+                        SettingDohIcon(tint = AppTheme.colors.success)
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
                             "DNS over HTTPS",
-                            style = IosTheme.type.body,
+                            style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
                             if (dohEnabled) "已开启 · 仅解析 linux.do，其余直透系统 DNS" else "关闭 · 使用系统默认 DNS",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
-                    IosSwitch(checked = dohEnabled, onCheckedChange = onDohEnabled)
+                    Switch(checked = dohEnabled, onCheckedChange = onDohEnabled)
                 }
 
                 if (dohEnabled) {
-                    IosDivider()
+                    ListDivider()
 
                     // 自动故障切换
-                    IosRow(onClick = {}) {
+                    ListRow(onClick = {}) {
                         Text(
                             "自动故障切换",
-                            style = IosTheme.type.body,
+                            style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f),
                         )
-                        IosSwitch(checked = dohAutoFailover, onCheckedChange = onDohAutoFailover)
+                        Switch(checked = dohAutoFailover, onCheckedChange = onDohAutoFailover)
                     }
 
-                    IosDivider()
+                    ListDivider()
 
                     // 智能定时测速切优
-                    IosRow(onClick = {}) {
+                    ListRow(onClick = {}) {
                         Column(Modifier.weight(1f)) {
                             Text(
                                 "智能定时测速切优",
-                                style = IosTheme.type.body,
+                                style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(
                                 "每 10 分钟自动监测各节点延迟，智能切换至最快健康节点",
-                                style = IosTheme.type.footnote,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 2.dp),
                             )
                         }
-                        IosSwitch(checked = dohAutoOptimize, onCheckedChange = onDohAutoOptimize)
+                        Switch(checked = dohAutoOptimize, onCheckedChange = onDohAutoOptimize)
                     }
 
-                    IosDivider()
+                    ListDivider()
 
                     // 节点列表标题与一键测速栏
                     Row(
@@ -897,9 +898,9 @@ fun SettingsScreen(
                     ) {
                         Text(
                             "节点列表",
-                            style = IosTheme.type.body,
+                            style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = IosTheme.colors.label,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Row(
                             modifier = Modifier
@@ -908,23 +909,23 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             if (isTestingAllDoh) {
-                                IosActivityIndicator(diameter = 14.dp)
+                                LoadingIndicator(diameter = 14.dp)
                                 Spacer(Modifier.width(6.dp))
                             }
                             Text(
                                 "⚡ 一键测速所有节点",
-                                style = IosTheme.type.subheadline,
-                                color = IosTheme.colors.accent,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Medium,
                             )
                         }
                     }
 
-                    IosDivider()
+                    ListDivider()
 
                     // 节点列表
                     dohServers.forEachIndexed { idx, server ->
-                        if (idx > 0) IosDivider(startIndent = 42.dp)
+                        if (idx > 0) ListDivider(startIndent = 42.dp)
                         val latencyMs = dohLatencies[server.id]
                         val isSelected = server.url == selectedDohServerUrl
 
@@ -943,8 +944,8 @@ fun SettingsScreen(
                                 if (isSelected) {
                                     Text(
                                         "✓",
-                                        style = IosTheme.type.body,
-                                        color = Color(0xFF34C759),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = AppTheme.colors.success,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 18.sp,
                                     )
@@ -959,16 +960,16 @@ fun SettingsScreen(
                             ) {
                                 Text(
                                     server.name,
-                                    style = IosTheme.type.body,
+                                    style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
-                                    color = IosTheme.colors.label,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                 )
                                 Text(
                                     server.url,
-                                    style = IosTheme.type.caption,
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(top = 2.dp),
@@ -983,9 +984,9 @@ fun SettingsScreen(
                                 // 延迟胶囊
                                 if (latencyMs != null) {
                                     val (bgColor, textColor, text) = when {
-                                        latencyMs < 0L -> Triple(IosTheme.colors.pressedHighlight, IosTheme.colors.secondaryLabel, "超时")
+                                        latencyMs < 0L -> Triple(MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurfaceVariant, "超时")
                                         latencyMs < 100L -> Triple(Color(0x3330D158), Color(0xFF30D158), "${latencyMs}ms")
-                                        else -> Triple(IosTheme.colors.pressedHighlight, IosTheme.colors.label, "${latencyMs}ms")
+                                        else -> Triple(MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurface, "${latencyMs}ms")
                                     }
                                     Box(
                                         modifier = Modifier
@@ -995,41 +996,41 @@ fun SettingsScreen(
                                     ) {
                                         Text(
                                             text,
-                                            style = IosTheme.type.caption,
+                                            style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = textColor,
                                         )
                                     }
                                 } else if (isTestingAllDoh || dohLatencies.containsKey(server.id)) {
-                                    IosActivityIndicator(diameter = 14.dp)
+                                    LoadingIndicator(diameter = 14.dp)
                                 }
 
                                 // 编辑按钮（小齿轮）
                                 Box(
                                     modifier = Modifier
                                         .size(30.dp)
-                                        .background(IosTheme.colors.pressedHighlight, RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(8.dp))
                                         .clickable { editingServer = server },
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    DohGearIcon(tint = IosTheme.colors.accent)
+                                    DohGearIcon(tint = MaterialTheme.colorScheme.primary)
                                 }
 
                                 // 删除按钮（小垃圾桶）
                                 Box(
                                     modifier = Modifier
                                         .size(30.dp)
-                                        .background(IosTheme.colors.pressedHighlight, RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(8.dp))
                                         .clickable { onDeleteDohServer(server) },
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    DohTrashIcon(tint = IosTheme.colors.destructive)
+                                    DohTrashIcon(tint = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
                     }
 
-                    IosDivider()
+                    ListDivider()
 
                     // 添加自定义节点与恢复默认
                     Row(
@@ -1041,15 +1042,15 @@ fun SettingsScreen(
                     ) {
                         Text(
                             "+ 添加自定义节点",
-                            style = IosTheme.type.subheadline,
-                            color = IosTheme.colors.accent,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.clickable { showAddServerDialog = true },
                         )
                         Text(
                             "恢复默认预设",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.clickable { showResetConfirmDialog = true },
                         )
                     }
@@ -1064,41 +1065,41 @@ fun SettingsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(IosTheme.colors.card, RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(16.dp))
                             .padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Text("添加自定义 DoH 节点", style = IosTheme.type.headline, fontWeight = FontWeight.SemiBold)
-                        Text("服务器 URL（必须以 https:// 开头）", style = IosTheme.type.footnote, color = IosTheme.colors.secondaryLabel)
+                        Text("添加自定义 DoH 节点", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("服务器 URL（必须以 https:// 开头）", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         BasicTextField(
                             value = newServerUrl,
                             onValueChange = { newServerUrl = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(IosTheme.colors.fieldBackground, RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(8.dp))
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                             singleLine = true,
-                            textStyle = IosTheme.type.body.copy(color = IosTheme.colors.label),
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                            cursorBrush = SolidColor(IosTheme.colors.label),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                         )
-                        Text("节点名称（可选）", style = IosTheme.type.footnote, color = IosTheme.colors.secondaryLabel)
+                        Text("节点名称（可选）", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         BasicTextField(
                             value = newServerName,
                             onValueChange = { newServerName = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(IosTheme.colors.fieldBackground, RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(8.dp))
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                             singleLine = true,
-                            textStyle = IosTheme.type.body.copy(color = IosTheme.colors.label),
-                            cursorBrush = SolidColor(IosTheme.colors.label),
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                             androidx.compose.material3.TextButton(
                                 onClick = { showAddServerDialog = false },
                                 modifier = Modifier.weight(1f),
-                            ) { Text("取消", color = IosTheme.colors.secondaryLabel) }
+                            ) { Text("取消", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                             androidx.compose.material3.Button(
                                 onClick = {
                                     val url = newServerUrl.trim()
@@ -1124,41 +1125,41 @@ fun SettingsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(IosTheme.colors.card, RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(16.dp))
                             .padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Text("编辑 DoH 节点", style = IosTheme.type.headline, fontWeight = FontWeight.SemiBold)
-                        Text("服务器 URL（必须以 https:// 开头）", style = IosTheme.type.footnote, color = IosTheme.colors.secondaryLabel)
+                        Text("编辑 DoH 节点", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("服务器 URL（必须以 https:// 开头）", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         BasicTextField(
                             value = editUrl,
                             onValueChange = { editUrl = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(IosTheme.colors.fieldBackground, RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(8.dp))
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                             singleLine = true,
-                            textStyle = IosTheme.type.body.copy(color = IosTheme.colors.label),
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                            cursorBrush = SolidColor(IosTheme.colors.label),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                         )
-                        Text("节点名称", style = IosTheme.type.footnote, color = IosTheme.colors.secondaryLabel)
+                        Text("节点名称", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         BasicTextField(
                             value = editName,
                             onValueChange = { editName = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(IosTheme.colors.fieldBackground, RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(8.dp))
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                             singleLine = true,
-                            textStyle = IosTheme.type.body.copy(color = IosTheme.colors.label),
-                            cursorBrush = SolidColor(IosTheme.colors.label),
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                             androidx.compose.material3.TextButton(
                                 onClick = { editingServer = null },
                                 modifier = Modifier.weight(1f),
-                            ) { Text("取消", color = IosTheme.colors.secondaryLabel) }
+                            ) { Text("取消", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                             androidx.compose.material3.Button(
                                 onClick = {
                                     val url = editUrl.trim()
@@ -1189,7 +1190,7 @@ fun SettingsScreen(
                                 showResetConfirmDialog = false
                             }
                         ) {
-                            Text("恢复默认", color = IosTheme.colors.accent)
+                            Text("恢复默认", color = MaterialTheme.colorScheme.primary)
                         }
                     },
                     dismissButton = {
@@ -1208,9 +1209,9 @@ fun SettingsScreen(
             // 遍历缓存目录有 I/O 开销，放在卡片内计算，避免每个设置子页都扫一遍。
             var cacheSizeText by remember { mutableStateOf(calcCacheSize()) }
             SectionTitle("缓存")
-            IosGroupCard {
+            SectionCard {
                 // 3.1 清理本地缓存
-                IosRow(onClick = {
+                ListRow(onClick = {
                     runCatching {
                         listOfNotNull(context.cacheDir, context.codeCacheDir, context.externalCacheDir).forEach { dir ->
                             dir.deleteRecursively()
@@ -1220,26 +1221,26 @@ fun SettingsScreen(
                     Toast.makeText(context, "已清理图片与网络临时缓存，账号与已读状态不受影响", Toast.LENGTH_SHORT).show()
                 }) {
                     SettingIconBadge(bgColor = Color(0xFFFFF4E5)) {
-                        SettingBroomIcon(tint = Color(0xFFFF9500))
+                        SettingBroomIcon(tint = AppTheme.colors.warning)
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
                             "清理本地缓存",
-                            style = IosTheme.type.body,
+                            style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
                             "仅清理图片与网络临时资源，不影响账号和已读状态",
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
                     Text(
                         "$cacheSizeText ›",
-                        style = IosTheme.type.subheadline,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -1248,9 +1249,9 @@ fun SettingsScreen(
         // ── 3. 关于与维护 ──
         if (page == null) item("group-about") {
             Spacer(Modifier.height(20.dp))
-            IosGroupCard {
+            SectionCard {
                 // 3.1 版本信息与检查更新 (合并)
-                IosRow(onClick = {
+                ListRow(onClick = {
                     onCheckUpdate()
                     if (!BuildConfig.DEBUG) {
                         val now = System.currentTimeMillis()
@@ -1273,12 +1274,12 @@ fun SettingsScreen(
                     }
                 }) {
                     SettingIconBadge(bgColor = Color(0xFFE8F3FF)) {
-                        SettingInfoIcon(tint = Color(0xFF007AFF))
+                        SettingInfoIcon(tint = MaterialTheme.colorScheme.primary)
                     }
                     Spacer(Modifier.width(12.dp))
                     Text(
                         "版本信息",
-                        style = IosTheme.type.body,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.weight(1f),
                     )
@@ -1287,13 +1288,13 @@ fun SettingsScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(IosTheme.colors.fieldBackground)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                                     .padding(horizontal = 8.dp, vertical = 3.dp),
                             ) {
                                 Text(
                                     "v${updateState.currentVersion}",
-                                    style = IosTheme.type.caption.copy(fontSize = 12.sp),
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium,
                                 )
                             }
@@ -1304,33 +1305,33 @@ fun SettingsScreen(
                                         .align(Alignment.TopEnd)
                                         .offset(x = 3.dp, y = (-3).dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFFFF3B30)),
+                                        .background(MaterialTheme.colorScheme.error),
                                 )
                             }
                         }
                         Spacer(Modifier.width(6.dp))
                         if (updateState.manualChecking) {
-                            IosActivityIndicator(diameter = 14.dp)
+                            LoadingIndicator(diameter = 14.dp)
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 "检查中...",
-                                style = IosTheme.type.subheadline,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
                             Text(
                                 if (updateState.updateInfo != null) "可更新" else "已是最新",
-                                style = IosTheme.type.subheadline,
-                                color = if (updateState.updateInfo != null) Color(0xFFFF3B30) else IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (updateState.updateInfo != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         Spacer(Modifier.width(8.dp))
-                        Text("›", color = IosTheme.colors.tertiaryLabel, style = IosTheme.type.title3)
+                        Text("›", color = MaterialTheme.colorScheme.outline, style = MaterialTheme.typography.titleLarge)
                     }
                 }
 
                 if (devOptionsUnlocked) {
-                    IosDivider()
+                    ListDivider()
 
                     // 3.3 开发者选项与诊断
                     SettingsEntryRow(
@@ -1348,10 +1349,10 @@ fun SettingsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = IosMetrics.screenPadding)
+                    .padding(horizontal = Dimens.screenPadding)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(IosTheme.colors.card)
-                    .border(0.5.dp, IosTheme.colors.separator.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
                     .clickable { showLogoutConfirmDialog = true }
                     .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center,
@@ -1360,13 +1361,13 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
-                    SettingLogoutIcon(tint = Color(0xFFFF3B30))
+                    SettingLogoutIcon(tint = MaterialTheme.colorScheme.error)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "退出当前账号",
-                        style = IosTheme.type.body,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFFF3B30),
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }
@@ -1392,7 +1393,7 @@ fun SettingsScreen(
                         onSyncReadProgress(true)
                     }
                 ) {
-                    Text("确认开启", color = IosTheme.colors.accent)
+                    Text("确认开启", color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
@@ -1417,7 +1418,7 @@ fun SettingsScreen(
                         onLogout()
                     }
                 ) {
-                    Text("退出", color = IosTheme.colors.destructive)
+                    Text("退出", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -1436,15 +1437,15 @@ fun SettingsScreen(
                 modifier = Modifier
                     .widthIn(min = 280.dp, max = 340.dp)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(IosTheme.colors.card)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("新话题感知频率", style = IosTheme.type.headline, fontWeight = FontWeight.Bold)
+                Text("新话题感知频率", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
                     "停留在话题列表时只读 GET /latest.json 探测是否有新话题并在顶部提示。频率越高越及时，可按需测试 Cloudflare 影响。",
-                    style = IosTheme.type.caption,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     AutoRefreshInterval.entries.forEach { option ->
@@ -1453,7 +1454,7 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) IosTheme.colors.accent.copy(alpha = 0.12f) else Color.Transparent)
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
                                 .clickable {
                                     onAutoRefreshInterval(option)
                                     showAutoRefreshIntervalDialog = false
@@ -1463,13 +1464,13 @@ fun SettingsScreen(
                         ) {
                             Text(
                                 option.label,
-                                style = IosTheme.type.body,
+                                style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) IosTheme.colors.accent else IosTheme.colors.label,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
                             if (isSelected) {
-                                Text("✓", color = IosTheme.colors.accent, fontWeight = FontWeight.Bold)
+                                Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -1484,15 +1485,15 @@ fun SettingsScreen(
                 modifier = Modifier
                     .widthIn(min = 280.dp, max = 340.dp)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(IosTheme.colors.card)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("通知推送范围", style = IosTheme.type.headline, fontWeight = FontWeight.Bold)
+                Text("通知推送范围", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
                     "选择推送到系统状态栏的消息类型：",
-                    style = IosTheme.type.caption,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     NotificationScope.entries.forEach { option ->
@@ -1501,7 +1502,7 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) IosTheme.colors.accent.copy(alpha = 0.12f) else Color.Transparent)
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
                                 .clickable {
                                     onNotificationScope(option)
                                     showNotificationScopeDialog = false
@@ -1512,18 +1513,18 @@ fun SettingsScreen(
                             Column(Modifier.weight(1f)) {
                                 Text(
                                     option.label,
-                                    style = IosTheme.type.body,
+                                    style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (isSelected) IosTheme.colors.accent else IosTheme.colors.label,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
                                     option.description,
-                                    style = IosTheme.type.caption,
-                                    color = IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             if (isSelected) {
-                                Text("✓", color = IosTheme.colors.accent, fontWeight = FontWeight.Bold)
+                                Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -1538,15 +1539,15 @@ fun SettingsScreen(
                 modifier = Modifier
                     .widthIn(min = 290.dp, max = 350.dp)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(IosTheme.colors.card)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text("🧪 推送与角标全场景实测", style = IosTheme.type.headline, fontWeight = FontWeight.Bold)
+                Text("🧪 推送与角标全场景实测", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
                     "无需等待他人回复，直接重放账号最近一条真实通知，走完整后台网络拉取 + 单帖正文补全 + 桌面角标联动：",
-                    style = IosTheme.type.caption,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 // 场景 1：息屏浅睡实测 (20秒)
@@ -1554,7 +1555,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(IosTheme.colors.accent.copy(alpha = 0.10f))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
                         .clickable {
                             showTestPushLabDialog = false
                             org.linuxdo.android.service.NotificationKeepAliveService.startShallowSleepTest(context)
@@ -1568,14 +1569,14 @@ fun SettingsScreen(
                 ) {
                     Text(
                         "1. 息屏浅睡实测 (20秒后触发)",
-                        style = IosTheme.type.subheadline,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = IosTheme.colors.accent,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         "点此按钮后请立即锁屏黑屏，验证浅睡期后台网络拉取、单帖正文展示与锁屏弹窗（角标 +1）",
-                        style = IosTheme.type.caption,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -1584,7 +1585,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFFF9500).copy(alpha = 0.12f))
+                        .background(AppTheme.colors.warning.copy(alpha = 0.12f))
                         .clickable {
                             showTestPushLabDialog = false
                             org.linuxdo.android.service.NotificationKeepAliveService.startDozeAlarmTest(context)
@@ -1598,14 +1599,14 @@ fun SettingsScreen(
                 ) {
                     Text(
                         "2. Doze 闹钟穿透唤醒 (60秒后唤醒)",
-                        style = IosTheme.type.subheadline,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFE67E22),
                     )
                     Text(
                         "立即断开长连接模拟深睡，60秒后由 AlarmManager + BroadcastReceiver 硬件唤醒拉取（角标 +1）",
-                        style = IosTheme.type.caption,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -1614,7 +1615,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF34C759).copy(alpha = 0.12f))
+                        .background(AppTheme.colors.success.copy(alpha = 0.12f))
                         .clickable {
                             showTestPushLabDialog = false
                             org.linuxdo.android.service.NotificationKeepAliveService.startScreenOnRushTest(context)
@@ -1628,14 +1629,14 @@ fun SettingsScreen(
                 ) {
                     Text(
                         "3. 亮屏抢跑实测 (锁屏后点亮即弹)",
-                        style = IosTheme.type.subheadline,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF28A745),
                     )
                     Text(
                         "锁屏黑屏 5 秒以上后按电源键点亮屏幕（无需解锁打开 App），验证亮屏广播秒级抢跑弹窗（角标 +1）",
-                        style = IosTheme.type.caption,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -1644,7 +1645,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF007AFF).copy(alpha = 0.12f))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                         .clickable {
                             showTestPushLabDialog = false
                             org.linuxdo.android.service.NotificationKeepAliveService.startBackgroundMinimizeTest(context)
@@ -1658,14 +1659,14 @@ fun SettingsScreen(
                 ) {
                     Text(
                         "4. 退回桌面后台实测 (15秒后弹窗)",
-                        style = IosTheme.type.subheadline,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF007AFF),
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         "点此按钮后按 Home 键将 App 最小化退回桌面（屏幕保持亮着），验证最小化后台轮询与弹窗（角标 +1）",
-                        style = IosTheme.type.caption,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -1680,7 +1681,7 @@ fun SettingsScreen(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(IosTheme.colors.accent.copy(alpha = 0.12f))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                             .clickable {
                                 val store = org.linuxdo.android.data.SessionStore(context)
                                 store.setTestSimulatedUnreadCount(0)
@@ -1700,13 +1701,13 @@ fun SettingsScreen(
                             .padding(vertical = 9.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("角标 +1", style = IosTheme.type.caption, fontWeight = FontWeight.SemiBold, color = IosTheme.colors.accent)
+                        Text("角标 +1", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                     }
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(IosTheme.colors.fieldBackground)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                             .clickable {
                                 val store = org.linuxdo.android.data.SessionStore(context)
                                 store.setTestSimulatedUnreadCount(0)
@@ -1720,7 +1721,7 @@ fun SettingsScreen(
                             .padding(vertical = 9.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("已读 -1", style = IosTheme.type.caption, fontWeight = FontWeight.SemiBold)
+                        Text("已读 -1", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                     }
                     Box(
                         modifier = Modifier
@@ -1746,13 +1747,13 @@ fun SettingsScreen(
                             .padding(vertical = 9.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("设为 99", style = IosTheme.type.caption, fontWeight = FontWeight.Bold, color = Color(0xFFFF2D55))
+                        Text("设为 99", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFFFF2D55))
                     }
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(IosTheme.colors.fieldBackground)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                             .clickable {
                                 val store = org.linuxdo.android.data.SessionStore(context)
                                 // 解除锁定并清掉模拟未读，让下一轮 refreshUnread 立刻校准回真实未读。
@@ -1766,7 +1767,7 @@ fun SettingsScreen(
                             .padding(vertical = 9.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("角标归零", style = IosTheme.type.caption, fontWeight = FontWeight.SemiBold)
+                        Text("角标归零", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

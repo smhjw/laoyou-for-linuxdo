@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui.screen
 
+import org.linuxdo.android.ui.design.*
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -40,13 +43,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.linuxdo.android.ui.design.IosDivider
-import org.linuxdo.android.ui.design.IosGroupCard
+import org.linuxdo.android.ui.design.ListDivider
+import org.linuxdo.android.ui.design.SectionCard
 import org.linuxdo.android.ui.design.avatarShape
-import org.linuxdo.android.ui.design.IosLargeTitleScaffold
-import org.linuxdo.android.ui.design.IosRow
-import org.linuxdo.android.ui.design.IosTheme
-import org.linuxdo.android.ui.design.IosLoadingBox
+import org.linuxdo.android.ui.design.AppScaffold
+import org.linuxdo.android.ui.design.ListRow
+import org.linuxdo.android.ui.design.LoadingBox
 import org.linuxdo.android.data.ProfileSection
 import org.linuxdo.android.data.NotificationFilter
 import coil.compose.AsyncImage
@@ -58,7 +60,7 @@ import android.graphics.Canvas
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.CornerRadius
 import org.linuxdo.android.ui.*
-import org.linuxdo.android.ui.design.IosTextAction
+import org.linuxdo.android.ui.design.TextAction
 
 /** 列表攒够这么多条才允许继续自动翻页;不足则改成手动按钮。 */
 private const val AUTO_LOAD_THRESHOLD = 20
@@ -127,12 +129,11 @@ fun ProfileScreen(
     val topicCount = remember(summaryFields) { findMetric(summaryFields, "创建话题", findMetric(summaryFields, "发表话题")) }
     val bookmarkCount = remember(summaryFields) { findMetric(summaryFields, "我的收藏") }
 
-    IosLargeTitleScaffold(
+    AppScaffold(
         title = if (notificationOnly) "通知" else "我的",
         listState = list,
         onBack = onBack,
         showLargeTitle = !notificationOnly,
-        backLabel = if (notificationOnly) "" else "返回",
         scrollToTopRequest = scrollToTopRequest,
         trailing = {
             if (!notificationOnly) {
@@ -146,7 +147,7 @@ fun ProfileScreen(
                             .clickable(onClick = onSettings),
                         contentAlignment = Alignment.Center,
                     ) {
-                        ProfileSettingsGearIcon(tint = IosTheme.colors.secondaryLabel)
+                        ProfileSettingsGearIcon(tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -160,7 +161,7 @@ fun ProfileScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp)
                         .clip(RoundedCornerShape(18.dp))
-                        .background(IosTheme.colors.card)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         .padding(horizontal = 20.dp, vertical = 22.dp),
                 ) {
                     // 上半部分: 头像 + 用户名 + 你的社区足迹 + 右侧退出登录胶囊
@@ -182,7 +183,7 @@ fun ProfileScreen(
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
-                                color = IosTheme.colors.accent,
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                         Spacer(Modifier.width(16.dp))
@@ -194,13 +195,13 @@ fun ProfileScreen(
                                     fontSize = 21.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
-                                color = IosTheme.colors.label,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = "你的社区足迹",
-                                style = IosTheme.type.footnote,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         // 退出登录胶囊按钮
@@ -214,15 +215,15 @@ fun ProfileScreen(
                         ) {
                             Text(
                                 text = "退出登录",
-                                style = IosTheme.type.caption.copy(fontSize = 12.sp),
+                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFFFF4D4F),
+                                color = MaterialTheme.colorScheme.error,
                             )
                         }
                     }
 
                     Spacer(Modifier.height(20.dp))
-                    IosDivider()
+                    ListDivider()
                     Spacer(Modifier.height(18.dp))
 
                     // 下半部分: 3 列核心指标 (访问天数、阅读时长、浏览话题)
@@ -242,13 +243,13 @@ fun ProfileScreen(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
-                                color = IosTheme.colors.label,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Spacer(Modifier.height(5.dp))
                             Text(
                                 text = "访问天数",
-                                style = IosTheme.type.caption.copy(fontSize = 12.sp),
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -256,7 +257,7 @@ fun ProfileScreen(
                             modifier = Modifier
                                 .width(0.5.dp)
                                 .height(32.dp)
-                                .background(IosTheme.colors.separator),
+                                .background(MaterialTheme.colorScheme.outlineVariant),
                         )
 
                         // 阅读时长
@@ -271,14 +272,14 @@ fun ProfileScreen(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
-                                color = IosTheme.colors.label,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                             )
                             Spacer(Modifier.height(5.dp))
                             Text(
                                 text = "阅读时长",
-                                style = IosTheme.type.caption.copy(fontSize = 12.sp),
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -286,7 +287,7 @@ fun ProfileScreen(
                             modifier = Modifier
                                 .width(0.5.dp)
                                 .height(32.dp)
-                                .background(IosTheme.colors.separator),
+                                .background(MaterialTheme.colorScheme.outlineVariant),
                         )
 
                         // 浏览话题
@@ -301,13 +302,13 @@ fun ProfileScreen(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
-                                color = IosTheme.colors.label,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Spacer(Modifier.height(5.dp))
                             Text(
                                 text = "浏览话题",
-                                style = IosTheme.type.caption.copy(fontSize = 12.sp),
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -449,7 +450,7 @@ fun ProfileScreen(
             ) {
                 NotificationFilter.entries.forEach { filter ->
                     val selected = notificationFilter == filter
-                    val color = if (selected) IosTheme.colors.accent else IosTheme.colors.secondaryLabel
+                    val color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     val hasUnread = filter != NotificationFilter.All && (
                         filter in unreadFilters || visibleEntries.any { it.unread && filter.includes(it.notificationType) }
                     )
@@ -457,7 +458,7 @@ fun ProfileScreen(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (selected) IosTheme.colors.accent.copy(alpha = 0.12f) else IosTheme.colors.card)
+                            .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceContainerLow)
                             .clickable { onNotificationFilter(filter) }
                             .padding(vertical = 10.dp),
                         horizontalArrangement = Arrangement.Center,
@@ -468,14 +469,14 @@ fun ProfileScreen(
                                 Modifier
                                     .size(6.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFFF3B30)),
+                                    .background(MaterialTheme.colorScheme.error),
                             )
                             Spacer(Modifier.width(4.dp))
                         }
                         NotificationTabIcon(filter, color)
                         Text(
                             text = filter.label,
-                            style = IosTheme.type.subheadline,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = color,
                             modifier = Modifier.padding(start = 5.dp),
                         )
@@ -484,18 +485,18 @@ fun ProfileScreen(
             }
         }
 
-        if (state.loading && !state.loaded) item("loading") { IosLoadingBox() }
+        if (state.loading && !state.loaded) item("loading") { LoadingBox() }
         state.error?.let { message -> item("error") { ErrorNotice(message) { onLoad(section, true, false) } } }
 
         if (section != ProfileSection.Summary) {
             items(visibleEntries, key = { it.id }) { entry ->
                 val notification = section == ProfileSection.Notifications
-                IosGroupCard(Modifier.padding(bottom = if (notification) 4.dp else 8.dp)) {
-                    IosRow(onClick = {
+                SectionCard(Modifier.padding(bottom = if (notification) 4.dp else 8.dp)) {
+                    ListRow(onClick = {
                         if (section == ProfileSection.Notifications && entry.unread) entry.id.toLongOrNull()?.let(onReadNotification)
                         entry.topicId?.let { onOpenTopic(it, entry.title, entry.postNumber) }
                     }) {
-                        if (entry.unread) Text("•", color = IosTheme.colors.accent, modifier = Modifier.padding(end = 6.dp))
+                        if (entry.unread) Text("•", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 6.dp))
                         if (notification) {
                             NotificationAvatarWithBadge(
                                 avatarUrl = entry.avatarUrl,
@@ -525,7 +526,7 @@ fun ProfileScreen(
                                         if (!entry.actor.isNullOrBlank()) {
                                             Text(
                                                 text = entry.actor,
-                                                style = IosTheme.type.footnote,
+                                                style = MaterialTheme.typography.bodySmall,
                                                 fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
                                             )
@@ -539,7 +540,7 @@ fun ProfileScreen(
                                         ) {
                                             Text(
                                                 text = typeTag,
-                                                style = IosTheme.type.caption.copy(fontSize = 11.sp),
+                                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
                                                 fontWeight = FontWeight.Medium,
                                                 color = notificationTypeTint(entry.notificationType),
                                             )
@@ -548,8 +549,8 @@ fun ProfileScreen(
                                     if (dateStr.isNotBlank()) {
                                         Text(
                                             text = dateStr,
-                                            style = IosTheme.type.caption,
-                                            color = IosTheme.colors.secondaryLabel,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.padding(start = 6.dp),
                                         )
                                     }
@@ -557,18 +558,18 @@ fun ProfileScreen(
                             } else {
                                 entry.actor?.let { actor ->
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(actor, style = IosTheme.type.footnote, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                        Text(actor, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                                     }
                                 }
                             }
                             Text(
                                 text = entry.title,
-                                style = if (notification) IosTheme.type.subheadline else IosTheme.type.body,
+                                style = if (notification) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
                                 maxLines = if (notification) 2 else 3,
                                 modifier = Modifier.padding(top = if (notification) 2.dp else 0.dp),
                             )
-                            if (!notification && entry.subtitle.isNotBlank()) Text(entry.subtitle, style = IosTheme.type.footnote,
-                                color = IosTheme.colors.secondaryLabel, maxLines = 3, modifier = Modifier.padding(top = 6.dp))
+                            if (!notification && entry.subtitle.isNotBlank()) Text(entry.subtitle, style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3, modifier = Modifier.padding(top = 6.dp))
                         }
                     }
                 }
@@ -580,7 +581,7 @@ fun ProfileScreen(
             visibleEntries.size < AUTO_LOAD_THRESHOLD && state.content.fields.isEmpty()) {
             item("load-more") {
                 Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-                    IosTextAction(if (visibleEntries.isEmpty()) "这一页没有更多，继续往前找" else "加载更早的记录") {
+                    TextAction(if (visibleEntries.isEmpty()) "这一页没有更多，继续往前找" else "加载更早的记录") {
                         onLoad(section, false, true)
                     }
                 }
@@ -590,7 +591,7 @@ fun ProfileScreen(
             state.error == null && !state.content.hasMore) {
             item("empty") { EmptyNotice() }
         }
-        if (state.loading && state.loaded) item("more") { IosLoadingBox() }
+        if (state.loading && state.loaded) item("more") { LoadingBox() }
     }
 
     // 退出登录确认对话框（防止误触）
@@ -603,7 +604,7 @@ fun ProfileScreen(
                 androidx.compose.material3.TextButton(
                     onClick = { showLogoutDialog = false; onLogout() },
                 ) {
-                    Text("退出", color = IosTheme.colors.destructive)
+                    Text("退出", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -678,9 +679,9 @@ private fun ProfileNavCard(
     hasBadge: Boolean = false,
     onClick: () -> Unit,
 ) {
-    val cardBg = if (selected) IosTheme.colors.accent.copy(alpha = 0.08f) else IosTheme.colors.card
-    val borderColor = if (selected) IosTheme.colors.accent else IosTheme.colors.separator.copy(alpha = 0.35f)
-    val contentColor = if (selected) IosTheme.colors.accent else IosTheme.colors.label
+    val cardBg = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceContainerLow
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    val contentColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
 
     Box(
         modifier = modifier
@@ -763,7 +764,7 @@ private fun ProfileNavCard(
             Spacer(Modifier.height(8.dp))
             Text(
                 text = title,
-                style = IosTheme.type.caption.copy(fontSize = 13.sp),
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
                 color = contentColor,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1,
@@ -774,7 +775,7 @@ private fun ProfileNavCard(
                 Modifier
                     .size(7.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFFF3B30))
+                    .background(MaterialTheme.colorScheme.error)
                     .align(Alignment.TopEnd)
                     .offset(x = (-5).dp, y = (5).dp)
             )
@@ -797,8 +798,8 @@ private fun ProfileMetricCard(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(IosTheme.colors.card)
-            .border(0.5.dp, IosTheme.colors.separator.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -908,8 +909,8 @@ private fun ProfileMetricCard(
         Column {
             Text(
                 text = label,
-                style = IosTheme.type.caption.copy(fontSize = 12.sp),
-                color = IosTheme.colors.secondaryLabel,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(4.dp))
             Text(
@@ -919,7 +920,7 @@ private fun ProfileMetricCard(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                 ),
-                color = IosTheme.colors.label,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
             )
         }
@@ -928,13 +929,13 @@ private fun ProfileMetricCard(
 
 @Composable
 private fun notificationTypeTint(type: Int): Color = when (type) {
-    5, 19 -> Color(0xFFFF3B30)
-    25 -> Color(0xFFFF9500)
-    14 -> Color(0xFF30B85B)
+    5, 19 -> MaterialTheme.colorScheme.error
+    25 -> AppTheme.colors.warning
+    14 -> AppTheme.colors.success
     12 -> Color(0xFFAF52DE)
     43 -> Color(0xFF5856D6)
     800, 801, 802 -> Color(0xFF0084FF)
-    else -> IosTheme.colors.accent
+    else -> MaterialTheme.colorScheme.primary
 }
 
 private fun notificationTypeTag(type: Int): String = when (type) {
@@ -977,13 +978,13 @@ private fun NotificationAvatarWithBadge(
     notificationType: Int,
     unread: Boolean,
 ) {
-    val cardColor = IosTheme.colors.card
+    val cardColor = MaterialTheme.colorScheme.surfaceContainerLow
     val isFollowType = notificationType in setOf(800, 801, 802)
     val badgeBgColor = if (isFollowType) Color(0xFF0084FF) else cardColor
     val badgeIconColor = when {
         isFollowType -> Color.White
-        unread -> IosTheme.colors.accent
-        IosTheme.colors.isDark -> Color(0xFFD1D1D6)
+        unread -> MaterialTheme.colorScheme.primary
+        AppTheme.isDark -> Color(0xFFD1D1D6)
         else -> Color(0xFF3A3A3C)
     }
     Box(Modifier.size(38.dp)) {
@@ -1002,14 +1003,14 @@ private fun NotificationAvatarWithBadge(
                     .align(Alignment.BottomStart)
                     .size(34.dp)
                     .clip(avatarShape(actor, null, 4.dp))
-                    .background(IosTheme.colors.fieldBackground),
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = actor?.firstOrNull()?.uppercase() ?: "★",
-                    style = IosTheme.type.footnote,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
-                    color = IosTheme.colors.secondaryLabel,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

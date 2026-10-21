@@ -35,6 +35,10 @@ class SettingsController(
     )
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
+    /** Android 12+ 跟随壁纸取色(Material You);关闭后用应用自带的蓝色板。 */
+    private val _dynamicColor = MutableStateFlow(prefs.getBoolean("dynamic_color", true))
+    val dynamicColor: StateFlow<Boolean> = _dynamicColor.asStateFlow()
+
     private val _treeView = MutableStateFlow(prefs.getBoolean("tree_view", true))
     val treeView: StateFlow<Boolean> = _treeView.asStateFlow()
 
@@ -82,6 +86,11 @@ class SettingsController(
     fun setThemeMode(mode: ThemeMode) {
         _themeMode.value = mode
         prefs.edit { putString("theme_mode", mode.name) }
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        _dynamicColor.value = enabled
+        prefs.edit { putBoolean("dynamic_color", enabled) }
     }
 
     fun setTreeView(enabled: Boolean) {

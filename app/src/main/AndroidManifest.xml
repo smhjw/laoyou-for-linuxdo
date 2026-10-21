@@ -53,7 +53,8 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.LinuxDo"
-        android:usesCleartextTraffic="false">
+        android:usesCleartextTraffic="false"
+        android:enableOnBackInvokedCallback="true">
 
         <service
             android:name=".service.NotificationKeepAliveService"

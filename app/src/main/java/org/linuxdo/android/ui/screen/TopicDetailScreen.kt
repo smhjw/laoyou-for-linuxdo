@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
@@ -149,7 +152,7 @@ import org.linuxdo.android.data.TreePost
 import org.linuxdo.android.data.DEFAULT_SUB_REPLY_LIMIT
 import org.linuxdo.android.data.threadRows
 import org.linuxdo.android.data.postAncestorIds
-import org.linuxdo.android.ui.design.IosTextAction
+import org.linuxdo.android.ui.design.TextAction
 import org.linuxdo.android.ui.ComposerTarget
 import org.linuxdo.android.ui.ComposerUiState
 import org.linuxdo.android.ui.DetailUiState
@@ -454,7 +457,7 @@ fun TopicDetailScreen(
             val unloadedTargetId = row.unloadedCandidateIds.firstOrNull { it !in state.completedReplies }
             val hasUnloadedRootReplies = treeView && unloadedTargetId != null
             val showCollapsedSubtreeBar = treeView && !hasExpandedSubtree && (row.allLoadedCount > 0 || hasUnloadedRootReplies)
-            Column(Modifier.fillMaxWidth().background(IosTheme.colors.card)) {
+            Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLow)) {
                 PostRow(
                     post = post,
                     isTopicAuthor = isTopicAuthor,
@@ -494,7 +497,7 @@ fun TopicDetailScreen(
                             .fillMaxWidth()
                             .padding(start = 16.dp, end = 16.dp, bottom = 14.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(IosTheme.colors.fieldBackground)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                             .clickable(enabled = !replyLoading) {
                                 collapsed = collapsed - post.id
                                 if (row.allLoadedCount > DEFAULT_SUB_REPLY_LIMIT || unloadedTargetId != null) {
@@ -509,14 +512,14 @@ fun TopicDetailScreen(
                     ) {
                         Text(
                             text = if (replyLoading) "正在加载回复…" else "查看全部 $totalHint 条回复 >",
-                            style = IosTheme.type.footnote,
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium,
-                            color = IosTheme.colors.accent,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
                 if (!hasExpandedSubtree) {
-                    IosDivider()
+                    ListDivider()
                 }
             }
         } else {
@@ -530,13 +533,13 @@ fun TopicDetailScreen(
                 bottomStart = 0.dp,
                 bottomEnd = 0.dp,
             )
-            Column(Modifier.fillMaxWidth().background(IosTheme.colors.card)) {
+            Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLow)) {
                 Column(
                     Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .clip(boxShape)
-                        .background(IosTheme.colors.fieldBackground),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 ) {
                     if (!row.isFirstInSubtree) {
                         Box(
@@ -544,7 +547,7 @@ fun TopicDetailScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp)
                                 .height(0.5.dp)
-                                .background(IosTheme.colors.separator.copy(alpha = 0.6f)),
+                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
                         )
                     }
                     SubReplyRow(
@@ -593,7 +596,7 @@ fun TopicDetailScreen(
                             .fillMaxWidth()
                             .padding(start = 16.dp, end = 16.dp, bottom = 14.dp)
                             .clip(RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp))
-                            .background(IosTheme.colors.fieldBackground)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                             .then(
                                 if (canExpandMore && !showCollapseButton) {
                                     Modifier.clickable(enabled = !moreLoading) {
@@ -615,9 +618,9 @@ fun TopicDetailScreen(
                         if (canExpandMore) {
                             Text(
                                 text = if (moreLoading) "正在加载回复…" else "查看全部 $totalReplies 条回复 >",
-                                style = IosTheme.type.footnote,
+                                style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
-                                color = IosTheme.colors.accent,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = if (showCollapseButton) {
                                     Modifier
                                         .clip(RoundedCornerShape(4.dp))
@@ -637,15 +640,15 @@ fun TopicDetailScreen(
                         } else {
                             Text(
                                 text = "共 $totalReplies 条回复",
-                                style = IosTheme.type.caption,
-                                color = IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         if (showCollapseButton) {
                             Text(
                                 text = "收起回复",
-                                style = IosTheme.type.footnote,
-                                color = IosTheme.colors.accent,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
                                     .clickable {
@@ -670,7 +673,7 @@ fun TopicDetailScreen(
                             )
                         }
                     }
-                    IosDivider()
+                    ListDivider()
                 }
             }
         }
@@ -713,8 +716,8 @@ fun TopicDetailScreen(
                     }
                 }
         ) {
-            Column(Modifier.fillMaxSize().background(IosTheme.colors.groupedBackground)) {
-                IosNavBar(title = state.topic?.title ?: title, onBack = onBack, trailing = trailing)
+            Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+                AppTopBar(title = state.topic?.title ?: title, onBack = onBack, trailing = { trailing() })
                 PullToRefreshBox(
                     isRefreshing = state.refreshing,
                     onRefresh = onRefresh,
@@ -731,7 +734,7 @@ fun TopicDetailScreen(
                                         alpha = if (state.refreshing) 1f else min(1f, fraction * 1.4f)
                                     },
                             ) {
-                                IosActivityIndicator(diameter = 22.dp)
+                                LoadingIndicator(diameter = 22.dp)
                             }
                         }
                     },
@@ -744,7 +747,7 @@ fun TopicDetailScreen(
                         ) {
                             item("title") {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(state.topic?.title ?: title, style = IosTheme.type.title3)
+                                    Text(state.topic?.title ?: title, style = MaterialTheme.typography.titleLarge)
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -780,7 +783,7 @@ fun TopicDetailScreen(
                             }
                             items(bodyRows, key = { it.post.id }) { row -> RenderPostEntry(row) }
                             if (state.loading && (state.posts.isEmpty() || state.remaining.isNotEmpty())) {
-                                item("loading") { IosLoadingBox() }
+                                item("loading") { LoadingBox() }
                             }
                             if (!showTopError) state.error?.let { message -> item("error") { ErrorNotice(message, onRetry) } }
                             if (!state.loading && state.topic != null && state.posts.isEmpty() && state.error == null) {
@@ -794,8 +797,8 @@ fun TopicDetailScreen(
                                             state.previousIds.isEmpty() -> "已显示全部可见楼层"
                                             else -> "已到话题末尾"
                                         },
-                                        color = IosTheme.colors.secondaryLabel,
-                                        style = IosTheme.type.footnote,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodySmall,
                                         modifier = Modifier.padding(20.dp),
                                     )
                                 }
@@ -821,14 +824,14 @@ fun TopicDetailScreen(
                         (noticeToast ?: state.noticeMessage)?.let { notice ->
                             Text(
                                 notice,
-                                style = IosTheme.type.footnote,
-                                color = Color(0xFF30B85B),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = AppTheme.colors.success,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.align(Alignment.BottomCenter)
                                     .padding(horizontal = 16.dp, vertical = 72.dp)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(IosTheme.colors.card)
-                                    .border(1.dp, Color(0xFF34C759).copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                    .border(1.dp, AppTheme.colors.success.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
                                     .padding(horizontal = 12.dp, vertical = 10.dp),
                             )
                         }
@@ -899,29 +902,29 @@ fun TopicDetailScreen(
  */
 @Composable
 private fun CommentOrderBar(total: Int, descending: Boolean, busy: Boolean, onToggle: () -> Unit) {
-    Column(Modifier.fillMaxWidth().background(IosTheme.colors.card)) {
+    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = if (total > 0) "全部回复 $total" else "全部回复",
-                style = IosTheme.type.subheadline,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = IosTheme.colors.label,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.weight(1f))
             Row(
                 Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(IosTheme.colors.fieldBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .padding(2.dp),
             ) {
                 OrderSegment("正序", selected = !descending, enabled = !busy) { if (descending) onToggle() }
                 OrderSegment("倒序", selected = descending, enabled = !busy) { if (!descending) onToggle() }
             }
         }
-        IosDivider()
+        ListDivider()
     }
 }
 
@@ -930,15 +933,15 @@ private fun OrderSegment(label: String, selected: Boolean, enabled: Boolean, onC
     Box(
         Modifier
             .clip(RoundedCornerShape(6.dp))
-            .background(if (selected) IosTheme.colors.card else Color.Transparent)
+            .background(if (selected) MaterialTheme.colorScheme.surfaceContainerLow else Color.Transparent)
             .clickable(enabled = enabled && !selected, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 4.dp),
     ) {
         Text(
             text = label,
-            style = IosTheme.type.footnote,
+            style = MaterialTheme.typography.bodySmall,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) IosTheme.colors.label else IosTheme.colors.secondaryLabel,
+            color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -996,7 +999,7 @@ private fun PreviousSliceGap(hiddenCount: Int, loading: Boolean, onClick: () -> 
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .background(IosTheme.colors.card)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -1005,7 +1008,7 @@ private fun PreviousSliceGap(hiddenCount: Int, loading: Boolean, onClick: () -> 
                             Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(IosTheme.colors.separator),
+                                .background(MaterialTheme.colorScheme.outlineVariant),
                         )
                         Column(
                             Modifier.padding(start = 10.dp),
@@ -1015,13 +1018,13 @@ private fun PreviousSliceGap(hiddenCount: Int, loading: Boolean, onClick: () -> 
                                 Modifier
                                     .size(width = 96.dp, height = 12.dp)
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(IosTheme.colors.separator),
+                                    .background(MaterialTheme.colorScheme.outlineVariant),
                             )
                             Box(
                                 Modifier
                                     .size(width = 64.dp, height = 10.dp)
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(IosTheme.colors.fieldBackground),
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                             )
                         }
                     }
@@ -1030,45 +1033,45 @@ private fun PreviousSliceGap(hiddenCount: Int, loading: Boolean, onClick: () -> 
                             .fillMaxWidth(0.92f)
                             .height(12.dp)
                             .clip(RoundedCornerShape(4.dp))
-                            .background(IosTheme.colors.separator),
+                            .background(MaterialTheme.colorScheme.outlineVariant),
                     )
                     Box(
                         Modifier
                             .fillMaxWidth(0.68f)
                             .height(12.dp)
                             .clip(RoundedCornerShape(4.dp))
-                            .background(IosTheme.colors.fieldBackground),
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                     )
                 }
-                IosDivider()
+                ListDivider()
             }
         }
         Row(
             Modifier
                 .fillMaxWidth()
-                .background(IosTheme.colors.groupedBackground)
+                .background(MaterialTheme.colorScheme.surface)
                 .clickable(enabled = !loading, onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (loading) {
-                IosActivityIndicator(diameter = 16.dp)
+                LoadingIndicator(diameter = 16.dp)
                 Text(
                     "正在加载前序楼层（剩余 $hiddenCount 层）…",
-                    style = IosTheme.type.footnote,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 8.dp),
                 )
             } else {
                 Text(
                     "↑ 中间省略 $hiddenCount 层 · 上滑或点击加载",
-                    style = IosTheme.type.subheadline,
-                    color = IosTheme.colors.accent,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
-        IosDivider()
+        ListDivider()
     }
 }
 
@@ -1081,14 +1084,14 @@ private fun PostManageDialog(post: Post, onDismiss: () -> Unit, onEdit: () -> Un
             modifier = Modifier
                 .widthIn(min = 280.dp, max = 340.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(22.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = if (isTopicRoot) "确认编辑此话题？" else "确认编辑此评论？",
-                style = IosTheme.type.headline,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
@@ -1103,7 +1106,7 @@ private fun PostManageDialog(post: Post, onDismiss: () -> Unit, onEdit: () -> Un
                             .weight(1f)
                             .height(44.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF007AFF))
+                            .background(MaterialTheme.colorScheme.primary)
                             .clickable {
                                 onDismiss()
                                 onEdit()
@@ -1115,7 +1118,7 @@ private fun PostManageDialog(post: Post, onDismiss: () -> Unit, onEdit: () -> Un
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             PostActionIcon(PostAction.Edit, selected = false, tint = Color.White)
-                            Text("编辑", style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+                            Text("编辑", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
                         }
                     }
                 }
@@ -1125,7 +1128,7 @@ private fun PostManageDialog(post: Post, onDismiss: () -> Unit, onEdit: () -> Un
                             .weight(1f)
                             .height(44.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFFFF3B30))
+                            .background(MaterialTheme.colorScheme.error)
                             .clickable {
                                 onDismiss()
                                 onDelete()
@@ -1137,7 +1140,7 @@ private fun PostManageDialog(post: Post, onDismiss: () -> Unit, onEdit: () -> Un
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             PostActionIcon(PostAction.Delete, selected = false, tint = Color.White)
-                            Text("删除", style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+                            Text("删除", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
                         }
                     }
                 }
@@ -1149,8 +1152,8 @@ private fun PostManageDialog(post: Post, onDismiss: () -> Unit, onEdit: () -> Un
 /** 回复整个话题的入口。淡雅蓝白微光质感,与页面底色及阅读进度胶囊自然呼应。 */
 @Composable
 private fun ReplyFab(enabled: Boolean, onClick: () -> Unit) {
-    val tintColor = if (enabled) IosTheme.colors.accent else IosTheme.colors.tertiaryLabel
-    val bgBase = IosTheme.colors.card.copy(alpha = 0.95f)
+    val tintColor = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val bgBase = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f)
     val bgTint = tintColor.copy(alpha = if (enabled) 0.12f else 0.05f)
     val borderColor = tintColor.copy(alpha = if (enabled) 0.28f else 0.12f)
     Box(
@@ -1181,11 +1184,11 @@ private fun ReplyFab(enabled: Boolean, onClick: () -> Unit) {
 /** 右下角的阅读进度。兼作"回到 1 楼"的按钮,省掉一个额外悬浮控件。 */
 @Composable
 private fun ReadingProgressPill(current: Int, total: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val arrowColor = IosTheme.colors.accent
+    val arrowColor = MaterialTheme.colorScheme.primary
     Row(
         modifier
             .clip(RoundedCornerShape(50))
-            .background(IosTheme.colors.card.copy(alpha = 0.95f))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1197,8 +1200,8 @@ private fun ReadingProgressPill(current: Int, total: Int, modifier: Modifier = M
                 drawLine(arrowColor, Offset(12f, 4f), Offset(19f, 11f), 2f)
             }
         }
-        Text("$current / $total", style = IosTheme.type.caption,
-            color = IosTheme.colors.secondaryLabel, modifier = Modifier.padding(start = 5.dp))
+        Text("$current / $total", style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 5.dp))
     }
 }
 
@@ -1524,8 +1527,8 @@ internal fun QuickEmojiPicker(
 ) {
     var selectedCategoryIndex by rememberSaveable { mutableIntStateOf(0) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    val isDark = IosTheme.colors.isDark
-    val containerBg = if (isDark) Color(0xFF1E1E20) else IosTheme.colors.fieldBackground
+    val isDark = AppTheme.isDark
+    val containerBg = if (isDark) Color(0xFF1E1E20) else MaterialTheme.colorScheme.surfaceContainerHighest
 
     val displayedEmojis = remember(selectedCategoryIndex, searchQuery) {
         val query = searchQuery.trim()
@@ -1569,7 +1572,7 @@ internal fun QuickEmojiPicker(
                     singleLine = true,
                     textStyle = TextStyle(
                         fontSize = 13.sp,
-                        color = IosTheme.colors.label,
+                        color = MaterialTheme.colorScheme.onSurface,
                     ),
                     modifier = Modifier.weight(1f),
                     decorationBox = { innerTextField ->
@@ -1577,7 +1580,7 @@ internal fun QuickEmojiPicker(
                             Text(
                                 "搜索表情...",
                                 fontSize = 13.sp,
-                                color = IosTheme.colors.secondaryLabel,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         innerTextField()
@@ -1587,7 +1590,7 @@ internal fun QuickEmojiPicker(
                     Text(
                         "✕",
                         fontSize = 11.sp,
-                        color = IosTheme.colors.secondaryLabel,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .clickable { searchQuery = "" }
                             .padding(2.dp),
@@ -1607,8 +1610,8 @@ internal fun QuickEmojiPicker(
             ) {
                 EMOJI_CATEGORIES.forEachIndexed { index, cat ->
                     val selected = index == selectedCategoryIndex
-                    val tabBg = if (selected) IosTheme.colors.accent.copy(alpha = 0.15f) else Color.Transparent
-                    val textColor = if (selected) IosTheme.colors.accent else IosTheme.colors.secondaryLabel
+                    val tabBg = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent
+                    val textColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
@@ -1640,7 +1643,7 @@ internal fun QuickEmojiPicker(
         ) {
             if (displayedEmojis.isEmpty()) {
                 Box(Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) {
-                    Text("未找到相关表情", style = IosTheme.type.footnote, color = IosTheme.colors.secondaryLabel)
+                    Text("未找到相关表情", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 displayedEmojis.chunked(8).forEach { rowEmojis ->
@@ -1697,8 +1700,8 @@ fun AttachmentPreviewRow(
                 modifier = Modifier
                     .size(if (media.isImage) 76.dp else 120.dp, 76.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(IosTheme.colors.card)
-                    .border(0.8.dp, IosTheme.colors.separator.copy(alpha = 0.6f), RoundedCornerShape(10.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .border(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(10.dp)),
             ) {
                 if (media.isImage) {
                     AsyncImage(
@@ -1718,14 +1721,14 @@ fun AttachmentPreviewRow(
                         verticalArrangement = Arrangement.Center,
                     ) {
                         ComposerAttachmentIcon(
-                            tint = IosTheme.colors.accent,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp),
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = media.name,
-                            style = IosTheme.type.caption.copy(fontSize = 11.sp),
-                            color = IosTheme.colors.label,
+                            style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -1745,7 +1748,7 @@ fun AttachmentPreviewRow(
                 ) {
                     Text(
                         text = "✕",
-                        style = IosTheme.type.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
                         color = Color.White,
                     )
                 }
@@ -1757,17 +1760,17 @@ fun AttachmentPreviewRow(
                 modifier = Modifier
                     .size(76.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(IosTheme.colors.fieldBackground)
-                    .border(0.8.dp, IosTheme.colors.accent.copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .border(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    IosActivityIndicator(diameter = 16.dp)
+                    LoadingIndicator(diameter = 16.dp)
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = "上传中…",
-                        style = IosTheme.type.caption.copy(fontSize = 10.sp),
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -1862,7 +1865,7 @@ private fun ComposerSheet(
                     }
                 )
                 .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -1878,7 +1881,7 @@ private fun ComposerSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 // 左侧轻量关闭叉号
-                val closeColor = IosTheme.colors.secondaryLabel
+                val closeColor = MaterialTheme.colorScheme.onSurfaceVariant
                 Box(
                     modifier = Modifier
                         .size(32.dp)
@@ -1894,9 +1897,9 @@ private fun ComposerSheet(
 
                 Text(
                     heading,
-                    style = IosTheme.type.headline,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = IosTheme.colors.label,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
 
@@ -1909,23 +1912,23 @@ private fun ComposerSheet(
                         .semantics { contentDescription = if (isFullScreen) "恢复默认高度" else "全屏显示" },
                     contentAlignment = Alignment.Center,
                 ) {
-                    FullscreenToggleIcon(isFullScreen = isFullScreen, tint = IosTheme.colors.label)
+                    FullscreenToggleIcon(isFullScreen = isFullScreen, tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
 
             // 中间输入区域 (自适应填满剩余空间，基于原生 EditText + ReplacementSpan 所见即所得图文混排)
-            val textColorInt = IosTheme.colors.label.toArgb()
-            val hintColorInt = IosTheme.colors.tertiaryLabel.toArgb()
+            val textColorInt = MaterialTheme.colorScheme.onSurface.toArgb()
+            val hintColorInt = MaterialTheme.colorScheme.outline.toArgb()
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(IosTheme.colors.fieldBackground),
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 if (composer.loadingDraft) {
-                    IosLoadingBox()
+                    LoadingBox()
                 } else {
                     AndroidView(
                         modifier = Modifier.fillMaxSize(),
@@ -1948,7 +1951,7 @@ private fun ComposerSheet(
             }
 
             composer.error?.let {
-                Text(it, style = IosTheme.type.footnote, color = IosTheme.colors.destructive, maxLines = 1)
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, maxLines = 1)
             }
 
             // 底部操作栏: 图片/附件/表情 Icon + 上传状态 + 右侧发送胶囊
@@ -1971,7 +1974,7 @@ private fun ComposerSheet(
                         .semantics { contentDescription = "添加图片" },
                     contentAlignment = Alignment.Center,
                 ) {
-                    ComposerImageIcon(tint = if (busy) IosTheme.colors.tertiaryLabel else IosTheme.colors.label)
+                    ComposerImageIcon(tint = if (busy) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface)
                 }
 
                 Spacer(Modifier.width(8.dp))
@@ -1987,7 +1990,7 @@ private fun ComposerSheet(
                         .semantics { contentDescription = "添加附件" },
                     contentAlignment = Alignment.Center,
                 ) {
-                    ComposerAttachmentIcon(tint = if (busy) IosTheme.colors.tertiaryLabel else IosTheme.colors.label)
+                    ComposerAttachmentIcon(tint = if (busy) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface)
                 }
 
                 Spacer(Modifier.width(8.dp))
@@ -1997,7 +2000,7 @@ private fun ComposerSheet(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (showEmojiPicker) IosTheme.colors.accent.copy(alpha = 0.12f) else Color.Transparent)
+                        .background(if (showEmojiPicker) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
                         .clickable(enabled = !busy) {
                             val next = !showEmojiPicker
                             showEmojiPicker = next
@@ -2013,9 +2016,9 @@ private fun ComposerSheet(
                 ) {
                     ComposerEmojiIcon(
                         tint = when {
-                            busy -> IosTheme.colors.tertiaryLabel
-                            showEmojiPicker -> IosTheme.colors.accent
-                            else -> IosTheme.colors.label
+                            busy -> MaterialTheme.colorScheme.outline
+                            showEmojiPicker -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurface
                         },
                     )
                 }
@@ -2034,17 +2037,17 @@ private fun ComposerSheet(
                     contentAlignment = Alignment.Center,
                 ) {
                     ComposerBoldIcon(
-                        tint = if (busy) IosTheme.colors.tertiaryLabel else IosTheme.colors.label,
+                        tint = if (busy) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
                 if (composer.uploading) {
                     Spacer(Modifier.width(10.dp))
-                    IosActivityIndicator(diameter = 16.dp)
+                    LoadingIndicator(diameter = 16.dp)
                     Text(
                         "上传中…",
-                        style = IosTheme.type.caption,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 4.dp),
                     )
                 }
@@ -2057,7 +2060,7 @@ private fun ComposerSheet(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
-                        .background(if (canSubmit) IosTheme.colors.accent else IosTheme.colors.accent.copy(alpha = 0.35f))
+                        .background(if (canSubmit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
                         .clickable(enabled = canSubmit) {
                             editorView?.exportToMarkdown()?.let { onDraftChange(it) }
                             onSubmit()
@@ -2067,12 +2070,12 @@ private fun ComposerSheet(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (composer.submitting) {
-                            IosActivityIndicator(diameter = 14.dp)
+                            LoadingIndicator(diameter = 14.dp)
                             Spacer(Modifier.width(6.dp))
                         }
                         Text(
                             sendText,
-                            style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Medium),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                             color = Color.White,
                         )
                     }
@@ -2108,14 +2111,14 @@ private fun DeleteConfirmDialog(post: Post, onDismiss: () -> Unit, onConfirm: ()
             Modifier
                 .widthIn(min = 280.dp, max = 340.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(22.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = if (isTopicRoot) "确认删除此话题？" else "确认删除此评论？",
-                style = IosTheme.type.headline,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
@@ -2123,8 +2126,8 @@ private fun DeleteConfirmDialog(post: Post, onDismiss: () -> Unit, onConfirm: ()
             if (isTopicRoot) {
                 Text(
                     "这是 1 楼，删除后整个话题及其下所有回复都会被移除。",
-                    style = IosTheme.type.footnote,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -2137,14 +2140,14 @@ private fun DeleteConfirmDialog(post: Post, onDismiss: () -> Unit, onConfirm: ()
                         .weight(1f)
                         .height(44.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(IosTheme.colors.fieldBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .clickable(onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         "取消",
-                        style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Medium),
-                        color = IosTheme.colors.label,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 Box(
@@ -2152,13 +2155,13 @@ private fun DeleteConfirmDialog(post: Post, onDismiss: () -> Unit, onConfirm: ()
                         .weight(1f)
                         .height(44.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFFF3B30))
+                        .background(MaterialTheme.colorScheme.error)
                         .clickable(onClick = onConfirm),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         "删除",
-                        style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = Color.White,
                     )
                 }
@@ -2173,14 +2176,14 @@ private fun AuthorBadge() {
         Modifier
             .padding(start = 5.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(IosTheme.colors.accent.copy(alpha = 0.14f))
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
             .padding(horizontal = 5.dp, vertical = 1.dp),
     ) {
         Text(
             text = "楼主",
-            style = IosTheme.type.caption.copy(fontSize = 11.sp),
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
             fontWeight = FontWeight.Medium,
-            color = IosTheme.colors.accent,
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
@@ -2219,7 +2222,7 @@ private fun PostRow(
     canFlag: Boolean = !post.yours,
 ) {
     val blocks = remember(post.cooked) { CookedParser.parseCached(post.cooked, onUnknownTag) }
-    val background = if (highlighted) IosTheme.colors.accent.copy(alpha = 0.12f) else IosTheme.colors.card
+    val background = if (highlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceContainerLow
     val canManage = post.canEdit || post.canDelete
     Column(
         Modifier
@@ -2251,10 +2254,10 @@ private fun PostRow(
             Column(Modifier.weight(1f).padding(start = 10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val displayName = post.displayName.ifBlank { post.username }
-                    Text(displayName, style = IosTheme.type.subheadline, fontWeight = FontWeight.SemiBold)
+                    Text(displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                     if (!post.name.isNullOrBlank() && post.name != post.username) {
                         Spacer(Modifier.width(4.dp))
-                        Text("@${post.username}", style = IosTheme.type.caption, color = IosTheme.colors.secondaryLabel)
+                        Text("@${post.username}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isTopicAuthor) {
                         Spacer(Modifier.width(4.dp))
@@ -2268,7 +2271,7 @@ private fun PostRow(
                             Row(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(IosTheme.colors.accent.copy(alpha = 0.10f))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
                                     .clickable(enabled = onJumpToPost != null) {
                                         onJumpToPost?.invoke(parentNum)
                                     }
@@ -2277,8 +2280,8 @@ private fun PostRow(
                             ) {
                                 Text(
                                     text = label,
-                                    style = IosTheme.type.caption.copy(fontSize = 11.sp),
-                                    color = if (onJumpToPost != null) IosTheme.colors.accent else IosTheme.colors.secondaryLabel,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                                    color = if (onJumpToPost != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -2287,11 +2290,11 @@ private fun PostRow(
                         }
                     }
                 }
-                Text(RelativeTime.format(post.createdAt), style = IosTheme.type.caption, color = IosTheme.colors.secondaryLabel)
+                Text(RelativeTime.format(post.createdAt), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text("#${post.postNumber}", style = IosTheme.type.footnote, color = IosTheme.colors.secondaryLabel)
+            Text("#${post.postNumber}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (post.acceptedAnswer) Text("✓ 解决方案", style = IosTheme.type.footnote, color = Color(0xFF30B85B))
+        if (post.acceptedAnswer) Text("✓ 解决方案", style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.success)
         CookedContent(blocks, onPicture)
         PostActions(
             post = post,
@@ -2356,7 +2359,7 @@ private fun SubReplyRow(
     val post = row.post
     val blocks = remember(post.cooked) { CookedParser.parseCached(post.cooked, onUnknownTag) }
     val canManage = post.canEdit || post.canDelete
-    val bg = if (highlighted) IosTheme.colors.accent.copy(alpha = 0.14f) else Color.Transparent
+    val bg = if (highlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent
     Column(
         Modifier
             .fillMaxWidth()
@@ -2388,32 +2391,32 @@ private fun SubReplyRow(
             ) {
                 Text(
                     text = post.displayName.ifBlank { post.username },
-                    style = IosTheme.type.footnote,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = IosTheme.colors.secondaryLabel,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (isTopicAuthor) AuthorBadge()
                 row.replyToUsername?.takeIf { it.isNotBlank() }?.let { targetUser ->
                     Text(
                         text = " 回复 ",
-                        style = IosTheme.type.footnote,
-                        color = IosTheme.colors.label,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = targetUser,
-                        style = IosTheme.type.footnote,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = IosTheme.colors.secondaryLabel,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             Text(
                 text = "${RelativeTime.format(post.createdAt)} · #${post.postNumber}",
-                style = IosTheme.type.caption,
-                color = IosTheme.colors.tertiaryLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.outline,
             )
         }
-        if (post.acceptedAnswer) Text("✓ 解决方案", style = IosTheme.type.caption, color = Color(0xFF30B85B))
+        if (post.acceptedAnswer) Text("✓ 解决方案", style = MaterialTheme.typography.labelMedium, color = AppTheme.colors.success)
         CookedContent(blocks, onPicture, subReply = true)
         PostActions(
             post = post,
@@ -2441,9 +2444,9 @@ private fun SubReplyRow(
         if (selfHasMore) {
             Text(
                 text = if (selfLoadingReplies) "正在加载回复…" else "查看该层更多回复 >",
-                style = IosTheme.type.caption,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Medium,
-                color = IosTheme.colors.accent,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
                     .clickable(enabled = !selfLoadingReplies, onClick = onLoadSelfReplies)
@@ -2486,7 +2489,7 @@ private fun PostActions(
             post.reactions.filter { it.count > 0 }.forEach { reaction ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ReactionIcon(reaction.id, emojiUrls)
-                    Text(" ${reaction.count}", style = IosTheme.type.caption, color = IosTheme.colors.secondaryLabel)
+                    Text(" ${reaction.count}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -2500,7 +2503,7 @@ private fun PostActions(
     ) {
         // 只有这一条楼层在提交时才转圈。
         if (pending) {
-            IosActivityIndicator(diameter = 16.dp)
+            LoadingIndicator(diameter = 16.dp)
             Spacer(Modifier.width(8.dp))
         }
         if (!compact && (post.canAcceptAnswer || post.canUnacceptAnswer || post.acceptedAnswer)) {
@@ -2569,7 +2572,7 @@ private fun PostActions(
                 DropdownMenu(
                     expanded = showMoreMenu,
                     onDismissRequest = { showMoreMenu = false },
-                    modifier = Modifier.background(IosTheme.colors.card),
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow),
                 ) {
                     DropdownMenuItem(
                         text = {
@@ -2578,7 +2581,7 @@ private fun PostActions(
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     text = if (post.bookmarked) "取消书签" else "添加书签",
-                                    color = if (post.bookmarked) IosTheme.colors.accent else IosTheme.colors.label,
+                                    color = if (post.bookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         },
@@ -2593,7 +2596,7 @@ private fun PostActions(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 PostActionIcon(PostAction.CopyLink, false, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("复制链接", color = IosTheme.colors.label)
+                                Text("复制链接", color = MaterialTheme.colorScheme.onSurface)
                             }
                         },
                         enabled = true,
@@ -2608,7 +2611,7 @@ private fun PostActions(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     PostActionIcon(PostAction.Flag, false, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text("举报", color = IosTheme.colors.label)
+                                    Text("举报", color = MaterialTheme.colorScheme.onSurface)
                                 }
                             },
                             enabled = !busy,
@@ -2624,7 +2627,7 @@ private fun PostActions(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     PostActionIcon(PostAction.Edit, false, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text("编辑", color = IosTheme.colors.label)
+                                    Text("编辑", color = MaterialTheme.colorScheme.onSurface)
                                 }
                             },
                             enabled = !busy,
@@ -2640,7 +2643,7 @@ private fun PostActions(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     PostActionIcon(PostAction.Delete, false, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text("删除", color = IosTheme.colors.destructive)
+                                    Text("删除", color = MaterialTheme.colorScheme.error)
                                 }
                             },
                             enabled = !busy,
@@ -2655,11 +2658,11 @@ private fun PostActions(
         }
     }
     error?.let {
-        Text(it, style = IosTheme.type.footnote, color = Color(0xFFFF453A))
-        IosTextAction("刷新状态", textStyle = IosTheme.type.footnote, onClick = onRefresh)
+        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        TextAction("刷新状态", textStyle = MaterialTheme.typography.bodySmall, onClick = onRefresh)
     }
     if (post.boosts.isNotEmpty()) Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-      val chipBg = if (compact) IosTheme.colors.card else IosTheme.colors.fieldBackground
+      val chipBg = if (compact) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerHighest
       FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         post.boosts.take(visibleBoosts).forEach { boost ->
             key(boost.id) {
@@ -2684,22 +2687,22 @@ private fun PostActions(
             }
         }
       }
-        if (visibleBoosts < post.boosts.size) IosTextAction("更多简评 (${post.boosts.size - visibleBoosts})", textStyle = IosTheme.type.caption) { visibleBoosts += 20 }
-        else if (visibleBoosts > 8) IosTextAction("收起简评", textStyle = IosTheme.type.caption) { visibleBoosts = 8 }
+        if (visibleBoosts < post.boosts.size) TextAction("更多简评 (${post.boosts.size - visibleBoosts})", textStyle = MaterialTheme.typography.labelMedium) { visibleBoosts += 20 }
+        else if (visibleBoosts > 8) TextAction("收起简评", textStyle = MaterialTheme.typography.labelMedium) { visibleBoosts = 8 }
     }
     deleteId?.let { id -> Dialog(onDismissRequest = { deleteId = null }) {
         Column(
             Modifier
                 .widthIn(min = 280.dp, max = 340.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(22.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "确认删除此简评？",
-                style = IosTheme.type.headline,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
@@ -2713,14 +2716,14 @@ private fun PostActions(
                         .weight(1f)
                         .height(44.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(IosTheme.colors.fieldBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .clickable { deleteId = null },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         "取消",
-                        style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Medium),
-                        color = IosTheme.colors.label,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 Box(
@@ -2728,13 +2731,13 @@ private fun PostActions(
                         .weight(1f)
                         .height(44.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFFF3B30))
+                        .background(MaterialTheme.colorScheme.error)
                         .clickable { deleteId = null; onDeleteBoost(id) },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         "删除",
-                        style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = Color.White,
                     )
                 }
@@ -2856,7 +2859,7 @@ private fun ReactionBubblePopup(
             modifier = Modifier
                 .shadow(elevation = 6.dp, shape = bubbleShape, clip = false)
                 .clip(bubbleShape)
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(bottom = 7.dp) // 预留底部小三角高度
                 .padding(horizontal = 14.dp, vertical = 10.dp),
         ) {
@@ -2980,7 +2983,7 @@ private fun BoostSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -2996,12 +2999,12 @@ private fun BoostSheet(
             ) {
                 Text(
                     text = "简评 #${target.postNumber} · @${target.username}",
-                    style = IosTheme.type.headline,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = IosTheme.colors.label,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
-                val closeColor = IosTheme.colors.secondaryLabel
+                val closeColor = MaterialTheme.colorScheme.onSurfaceVariant
                 Box(
                     modifier = Modifier
                         .size(28.dp)
@@ -3021,7 +3024,7 @@ private fun BoostSheet(
                     .fillMaxWidth()
                     .heightIn(min = 76.dp, max = 120.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(IosTheme.colors.fieldBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .verticalScroll(rememberScrollState())
                     .padding(12.dp),
             ) {
@@ -3035,15 +3038,15 @@ private fun BoostSheet(
                             }
                         }
                     },
-                    textStyle = IosTheme.type.body.copy(color = IosTheme.colors.label),
-                    cursorBrush = SolidColor(IosTheme.colors.accent),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focus),
                     decorationBox = { field ->
                         Box {
                             if (textFieldValue.text.isEmpty()) {
-                                Text("写一句简评…", style = IosTheme.type.body, color = IosTheme.colors.tertiaryLabel)
+                                Text("写一句简评…", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
                             }
                             field()
                         }
@@ -3064,7 +3067,7 @@ private fun BoostSheet(
                         modifier = Modifier
                             .size(34.dp)
                             .clip(CircleShape)
-                            .background(if (showEmojiPicker) IosTheme.colors.accent.copy(alpha = 0.12f) else Color.Transparent)
+                            .background(if (showEmojiPicker) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
                             .clickable(enabled = !busy) {
                                 val next = !showEmojiPicker
                                 showEmojiPicker = next
@@ -3080,17 +3083,17 @@ private fun BoostSheet(
                     ) {
                         ComposerEmojiIcon(
                             tint = when {
-                                busy -> IosTheme.colors.tertiaryLabel
-                                showEmojiPicker -> IosTheme.colors.accent
-                                else -> IosTheme.colors.label
+                                busy -> MaterialTheme.colorScheme.outline
+                                showEmojiPicker -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.onSurface
                             },
                             modifier = Modifier.size(20.dp),
                         )
                     }
                     Text(
                         text = "可见 ${length.visible}/${BoostLength.MAX_VISIBLE} · 表情 ${length.emoji}/${BoostLength.MAX_EMOJI}",
-                        style = IosTheme.type.caption,
-                        color = if (over) IosTheme.colors.destructive else IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Row(
@@ -3102,16 +3105,16 @@ private fun BoostSheet(
                             .clickable(enabled = !busy, onClick = onDismiss)
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                     ) {
-                        Text("取消", style = IosTheme.type.subheadline, color = IosTheme.colors.secondaryLabel)
+                        Text("取消", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
-                            .background(if (canSend) IosTheme.colors.accent else IosTheme.colors.accent.copy(alpha = 0.35f))
+                            .background(if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
                             .clickable(enabled = canSend, onClick = onSend)
                             .padding(horizontal = 20.dp, vertical = 7.dp),
                     ) {
-                        Text("发送", style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Medium), color = Color.White)
+                        Text("发送", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = Color.White)
                     }
                 }
             }
@@ -3144,13 +3147,13 @@ internal fun PostActionIcon(
     modifier: Modifier = Modifier.size(20.dp),
 ) {
     val color = tint ?: when {
-        action == PostAction.Solution && selected -> Color(0xFF30B85B)
-        action == PostAction.Delete -> IosTheme.colors.destructive
-        action == PostAction.Bookmark && selected -> IosTheme.colors.accent
-        selected -> IosTheme.colors.accent
-        else -> IosTheme.colors.secondaryLabel
+        action == PostAction.Solution && selected -> AppTheme.colors.success
+        action == PostAction.Delete -> MaterialTheme.colorScheme.error
+        action == PostAction.Bookmark && selected -> MaterialTheme.colorScheme.primary
+        selected -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    val cardBg = IosTheme.colors.card
+    val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
     Canvas(modifier) {
         scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
             val shape = Path()
@@ -3312,16 +3315,16 @@ private fun TiebaPostActionButton(
     label: String,
     action: PostAction,
     selected: Boolean = false,
-    color: Color = IosTheme.colors.secondaryLabel,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     enabled: Boolean = true,
     compact: Boolean = false,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
 ) {
     val activeTint = when (action) {
-        PostAction.Like -> Color(0xFFFF3B30)
-        PostAction.Solution -> Color(0xFF30B85B)
-        else -> IosTheme.colors.accent
+        PostAction.Like -> MaterialTheme.colorScheme.error
+        PostAction.Solution -> AppTheme.colors.success
+        else -> MaterialTheme.colorScheme.primary
     }
     val buttonTint = if (selected) activeTint else color
     val buttonBg = if (selected) activeTint.copy(alpha = 0.12f) else Color.Transparent
@@ -3365,19 +3368,19 @@ private fun CookedContent(
                     val codeResetKey = LocalSelectionResetKey.current
                     key(codeResetKey) {
                         SelectionContainer {
-                            Text(block.text, fontFamily = FontFamily.Monospace, style = IosTheme.type.footnote,
+                            Text(block.text, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.fillMaxWidth().background(
-                                    if (subReply) IosTheme.colors.card else IosTheme.colors.fieldBackground,
+                                    if (subReply) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerHighest,
                                 ).horizontalScroll(rememberScrollState()).padding(10.dp))
                         }
                     }
                 }
                 is CookedBlock.Quote -> Row(
                     Modifier.fillMaxWidth().background(
-                        if (subReply) IosTheme.colors.card else IosTheme.colors.fieldBackground,
+                        if (subReply) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerHighest,
                     ),
                 ) {
-                    Box(Modifier.width(3.dp).height(28.dp).background(IosTheme.colors.separator))
+                    Box(Modifier.width(3.dp).height(28.dp).background(MaterialTheme.colorScheme.outlineVariant))
                     Box(Modifier.weight(1f).padding(10.dp)) {
                         CookedContent(block.blocks, onPicture, compact = compact, subReply = subReply)
                     }
@@ -3420,11 +3423,11 @@ private fun CookedContent(
                     }
 
                     Box(
-                        modifier = ratioModifier.background(IosTheme.colors.fieldBackground),
+                        modifier = ratioModifier.background(MaterialTheme.colorScheme.surfaceContainerHighest),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (isLoading && !isError) {
-                            IosActivityIndicator(diameter = 20.dp)
+                            LoadingIndicator(diameter = 20.dp)
                         }
                         AsyncImage(
                             model = imageRequest,
@@ -3460,12 +3463,12 @@ private fun CookedContent(
                                 verticalArrangement = Arrangement.spacedBy(6.dp),
                                 modifier = Modifier.padding(8.dp),
                             ) {
-                                Text("图片未显示", style = IosTheme.type.caption, color = IosTheme.colors.secondaryLabel)
+                                Text("图片未显示", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Text(
                                         text = "重新加载",
-                                        style = IosTheme.type.caption,
-                                        color = Color(0xFF007AFF),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.clickable {
                                             isError = false
                                             isLoading = true
@@ -3475,8 +3478,8 @@ private fun CookedContent(
                                     )
                                     Text(
                                         text = "查看大图",
-                                        style = IosTheme.type.caption,
-                                        color = Color(0xFF007AFF),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.clickable {
                                             onPicture(block.originalUrl, currentUrl)
                                         },
@@ -3490,7 +3493,7 @@ private fun CookedContent(
                     Row {
                         Text(
                             text = block.start?.let { "${it + index}. " } ?: "• ",
-                            style = if (subReply) IosTheme.type.subheadline else IosTheme.type.body,
+                            style = if (subReply) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.widthIn(min = 22.dp),
                         )
                         Box(Modifier.weight(1f)) {
@@ -3498,7 +3501,7 @@ private fun CookedContent(
                         }
                     }
                 }
-                CookedBlock.Divider -> IosFullDivider()
+                CookedBlock.Divider -> HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }
@@ -3506,14 +3509,15 @@ private fun CookedContent(
 
 @Composable
 private fun RichParagraph(runs: List<InlineText>, compact: Boolean = false, subReply: Boolean = false) {
-    val colors = IosTheme.colors
+    val codeBackground = MaterialTheme.colorScheme.surfaceContainerHighest
+    val linkColor = MaterialTheme.colorScheme.primary
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val openTopic = LocalOpenTopic.current
     val updatedOpenTopic by rememberUpdatedState(openTopic)
     val scope = rememberCoroutineScope()
     val resetKey = LocalSelectionResetKey.current
-    val annotated = remember(runs, colors, uriHandler, context) {
+    val annotated = remember(runs, codeBackground, linkColor, uriHandler, context) {
         buildAnnotatedString {
             runs.forEach { run ->
                 val emoji = run.emojiUrl
@@ -3525,11 +3529,11 @@ private fun RichParagraph(runs: List<InlineText>, compact: Boolean = false, subR
                     fontWeight = if (run.bold) FontWeight.Bold else null,
                     fontStyle = if (run.italic) FontStyle.Italic else null,
                     fontFamily = if (run.code) FontFamily.Monospace else null,
-                    background = if (run.code) colors.fieldBackground else Color.Unspecified,
+                    background = if (run.code) codeBackground else Color.Unspecified,
                 )) {
                     val link = run.href
                     if (link == null) append(run.text) else withLink(LinkAnnotation.Url(
-                        link, TextLinkStyles(style = SpanStyle(color = colors.accent)),
+                        link, TextLinkStyles(style = SpanStyle(color = linkColor)),
                         linkInteractionListener = {
                             if (run.isAttachment) {
                                 Toast.makeText(context, "正在下载文件…", Toast.LENGTH_SHORT).show()
@@ -3578,9 +3582,9 @@ private fun RichParagraph(runs: List<InlineText>, compact: Boolean = false, subR
     }
     key(resetKey) {
         when {
-            compact -> Text(annotated, style = IosTheme.type.caption, inlineContent = inline)
-            subReply -> SelectionContainer { Text(annotated, style = IosTheme.type.subheadline, inlineContent = inline) }
-            else -> SelectionContainer { Text(annotated, style = IosTheme.type.body, inlineContent = inline) }
+            compact -> Text(annotated, style = MaterialTheme.typography.labelMedium, inlineContent = inline)
+            subReply -> SelectionContainer { Text(annotated, style = MaterialTheme.typography.bodyMedium, inlineContent = inline) }
+            else -> SelectionContainer { Text(annotated, style = MaterialTheme.typography.bodyLarge, inlineContent = inline) }
         }
     }
 }
@@ -3706,7 +3710,7 @@ fun ImageViewer(
                                 is AsyncImagePainter.State.Loading -> {
                                     if (showSpinner) {
                                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                            IosActivityIndicator(
+                                            LoadingIndicator(
                                                 diameter = 34.dp,
                                                 color = Color.White.copy(alpha = 0.85f),
                                             )
@@ -3728,8 +3732,8 @@ fun ImageViewer(
                                                     .padding(horizontal = 20.dp, vertical = 12.dp)
                                                     .clickable { reloadTrigger++ },
                                             ) {
-                                                Text("大图加载失败", color = Color.White, style = IosTheme.type.subheadline)
-                                                Text("点击重新加载", color = Color(0xFF64B5F6), style = IosTheme.type.caption)
+                                                Text("大图加载失败", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                                Text("点击重新加载", color = Color(0xFF64B5F6), style = MaterialTheme.typography.labelMedium)
                                             }
                                         }
                                     }
@@ -3753,7 +3757,7 @@ fun ImageViewer(
                 Text(
                     text = if (saving) "保存中…" else "保存",
                     color = Color.White,
-                    style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Medium),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .background(Color.Black.copy(alpha = 0.38f))
@@ -3785,7 +3789,7 @@ fun ImageViewer(
                 Text(
                     text = "关闭",
                     color = Color.White,
-                    style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.Medium),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .background(Color.Black.copy(alpha = 0.38f))
@@ -3943,9 +3947,9 @@ private fun TopicNotificationSelector(
     enabled: Boolean,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val isDark = IosTheme.colors.isDark
-    val pillBg = if (isDark) Color(0xFF2C2C2E) else IosTheme.colors.fieldBackground
-    val pillTextColor = if (isDark) Color(0xFFE5E5EA) else IosTheme.colors.label
+    val isDark = AppTheme.isDark
+    val pillBg = if (isDark) Color(0xFF2C2C2E) else MaterialTheme.colorScheme.surfaceContainerHighest
+    val pillTextColor = if (isDark) Color(0xFFE5E5EA) else MaterialTheme.colorScheme.onSurface
 
     Box {
         Row(
@@ -3958,15 +3962,15 @@ private fun TopicNotificationSelector(
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             val dotColor = when (currentLevel) {
-                TopicNotificationLevel.Watching -> Color(0xFF007AFF) // 蓝
-                TopicNotificationLevel.Tracking -> Color(0xFF34C759) // 绿
+                TopicNotificationLevel.Watching -> MaterialTheme.colorScheme.primary // 蓝
+                TopicNotificationLevel.Tracking -> AppTheme.colors.success // 绿
                 TopicNotificationLevel.Regular -> Color(0xFF8E8E93)  // 灰
-                TopicNotificationLevel.Muted -> Color(0xFFFF3B30)    // 红
+                TopicNotificationLevel.Muted -> MaterialTheme.colorScheme.error    // 红
             }
             Box(Modifier.size(7.dp).background(dotColor, CircleShape))
             Text(
                 text = "通知: ${currentLevel.badgeLabel} ▾",
-                style = IosTheme.type.footnote,
+                style = MaterialTheme.typography.bodySmall,
                 color = pillTextColor,
                 fontWeight = FontWeight.Medium,
             )
@@ -3975,30 +3979,30 @@ private fun TopicNotificationSelector(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(IosTheme.colors.card),
+            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow),
         ) {
             TopicNotificationLevel.entries.forEach { level ->
                 val isSelected = level == currentLevel
                 DropdownMenuItem(
-                    modifier = if (isSelected) Modifier.background(IosTheme.colors.accent.copy(alpha = 0.12f)) else Modifier,
+                    modifier = if (isSelected) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)) else Modifier,
                     text = {
                         Column(modifier = Modifier.padding(vertical = 2.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 TopicNotificationIcon(level)
                                 Text(
                                     level.title,
-                                    style = IosTheme.type.subheadline,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (isSelected) IosTheme.colors.accent else IosTheme.colors.label,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 )
                                 if (isSelected) {
-                                    Text("✓", style = IosTheme.type.caption, color = IosTheme.colors.accent, fontWeight = FontWeight.Bold)
+                                    Text("✓", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                 }
                             }
                             Text(
                                 level.description,
-                                style = IosTheme.type.caption,
-                                color = if (isDark) Color(0xFFB0B0B5) else IosTheme.colors.secondaryLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (isDark) Color(0xFFB0B0B5) else MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 2,
                             )
                         }
@@ -4029,20 +4033,20 @@ private fun FlagDialog(
             modifier = Modifier
                 .widthIn(min = 280.dp, max = 360.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 "举报楼层 #${post.postNumber}",
-                style = IosTheme.type.headline,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = IosTheme.colors.label,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 "请选择举报原因，以便社区版主尽快核实处理：",
-                style = IosTheme.type.footnote,
-                color = IosTheme.colors.secondaryLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 PostFlagReason.entries.forEach { reason ->
@@ -4051,7 +4055,7 @@ private fun FlagDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) IosTheme.colors.fieldBackground else Color.Transparent)
+                            .background(if (isSelected) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent)
                             .clickable(enabled = !submitting) { selectedReason = reason }
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -4061,7 +4065,7 @@ private fun FlagDialog(
                                 .size(16.dp)
                                 .border(
                                     1.5.dp,
-                                    if (isSelected) IosTheme.colors.accent else IosTheme.colors.tertiaryLabel,
+                                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                                     CircleShape
                                 ),
                             contentAlignment = Alignment.Center,
@@ -4070,14 +4074,14 @@ private fun FlagDialog(
                                 Box(
                                     modifier = Modifier
                                         .size(8.dp)
-                                        .background(IosTheme.colors.accent, CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
                                 )
                             }
                         }
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(reason.title, style = IosTheme.type.subheadline, fontWeight = FontWeight.Medium)
-                            Text(reason.description, style = IosTheme.type.caption, color = IosTheme.colors.secondaryLabel)
+                            Text(reason.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                            Text(reason.description, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -4088,22 +4092,22 @@ private fun FlagDialog(
                     value = customMessage,
                     enabled = !submitting,
                     onValueChange = { customMessage = it },
-                    textStyle = IosTheme.type.subheadline.copy(color = IosTheme.colors.label),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(72.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(IosTheme.colors.fieldBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .padding(8.dp),
                     decorationBox = { innerTextField ->
                         if (customMessage.isEmpty()) {
-                            Text("请详细说明需要版主处理的问题...", style = IosTheme.type.subheadline, color = IosTheme.colors.tertiaryLabel)
+                            Text("请详细说明需要版主处理的问题...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
                         }
                         innerTextField()
                     }
                 )
             }
-            error?.let { Text(it, style = IosTheme.type.footnote, color = IosTheme.colors.destructive) }
+            error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -4114,11 +4118,11 @@ private fun FlagDialog(
                         .weight(1f)
                         .height(40.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(IosTheme.colors.fieldBackground)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .clickable(enabled = !submitting, onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("取消", style = IosTheme.type.subheadline, color = IosTheme.colors.secondaryLabel)
+                    Text("取消", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 val canSubmit = !submitting && (!selectedReason.requiresMessage || customMessage.isNotBlank())
                 Box(
@@ -4126,13 +4130,13 @@ private fun FlagDialog(
                         .weight(1f)
                         .height(40.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (canSubmit) IosTheme.colors.accent else IosTheme.colors.accent.copy(alpha = 0.4f))
+                        .background(if (canSubmit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                         .clickable(enabled = canSubmit) {
                             onSubmit(selectedReason.id, customMessage.trim().takeIf { selectedReason.requiresMessage })
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(if (submitting) "提交中…" else "提交", style = IosTheme.type.subheadline.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+                    Text(if (submitting) "提交中…" else "提交", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
                 }
             }
         }

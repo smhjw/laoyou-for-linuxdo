@@ -1,106 +1,155 @@
 package org.linuxdo.android.ui.design
 
 import android.app.Activity
-import androidx.core.view.WindowCompat
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.runtime.SideEffect
-
-import androidx.compose.foundation.IndicationNodeFactory
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.interaction.InteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.isSystemInDarkTheme
+import android.os.Build
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.node.DelegatableNode
-import androidx.compose.ui.node.DrawModifierNode
-import androidx.compose.ui.node.invalidateDraw
-import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-private val LocalIosColors = staticCompositionLocalOf { LightIosColors }
-private val LocalIosTypography = staticCompositionLocalOf { DefaultIosTypography }
+private val LocalExtendedColors = staticCompositionLocalOf { LightExtendedColors }
+private val LocalIsDark = staticCompositionLocalOf { false }
 
-object IosTheme {
-    val colors: IosColors
-        @Composable @ReadOnlyComposable get() = LocalIosColors.current
+/**
+ * 应用主题入口:Material 3 配色、字体、形状,外加 M3 没有的几种语义色。
+ *
+ * 颜色一律取语义角色(`MaterialTheme.colorScheme.primary` 等),不要在界面里写死色值 ——
+ * 动态取色开启时整套配色随壁纸变化,写死的颜色会和周围格格不入。
+ */
+object AppTheme {
+    /** 成功 / 警告 / 点赞等 M3 色板之外的语义色。 */
+    val colors: ExtendedColors
+        @Composable @ReadOnlyComposable get() = LocalExtendedColors.current
 
-    val type: IosTypography
-        @Composable @ReadOnlyComposable get() = LocalIosTypography.current
+    val isDark: Boolean
+        @Composable @ReadOnlyComposable get() = LocalIsDark.current
 }
 
+/**
+ * @param dynamicColor Android 12+ 上跟随壁纸取色(Material You);低版本或关闭时用品牌蓝色板。
+ */
 @Composable
-fun IosTheme(
-    dark: Boolean = isSystemInDarkTheme(),
+fun AppTheme(
+    dark: Boolean,
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val colors = if (dark) DarkIosColors else LightIosColors
+    val context = LocalContext.current
+    val scheme: ColorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        dark -> DarkScheme
+        else -> LightScheme
+    }
     val view = LocalView.current
-    SideEffect {
-        (view.context as? Activity)?.window?.let { window ->
-            @Suppress("DEPRECATION")
-            window.statusBarColor = colors.groupedBackground.toArgb()
-            @Suppress("DEPRECATION")
-            window.navigationBarColor = colors.card.toArgb()
-            WindowCompat.getInsetsController(window, view).apply {
-                isAppearanceLightStatusBars = !dark
-                isAppearanceLightNavigationBars = !dark
+    if (!view.isInEditMode) {
+        SideEffect {
+            (view.context as? Activity)?.window?.let { window ->
+                // targetSdk 35+ 强制全面屏,状态栏 / 导航栏透明,由界面底色透出;这里只管图标深浅。
+                WindowCompat.getInsetsController(window, view).apply {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
             }
         }
     }
     CompositionLocalProvider(
-        LocalIosColors provides colors,
-        LocalIosTypography provides DefaultIosTypography,
-        // 全局换掉 Material 水波纹。这是"像不像安卓"最直接的破绽,必须在主题层一次性解决,
-        // 而不是指望每个可点击组件都记得传 indication = null。
-        LocalIndication provides PressHighlight(colors.pressedHighlight),
-        LocalContentColor provides colors.label,
-        LocalTextStyle provides DefaultIosTypography.body,
-        content = content,
-    )
-}
-
-/**
- * iOS 的按压反馈:整行瞬时变色,无扩散动画,松手即恢复。
- * 高亮绘制在内容之下,所以文字不会被染色;行自身不画背景,由父层卡片提供底色。
- */
-private data class PressHighlight(private val color: Color) : IndicationNodeFactory {
-    override fun create(interactionSource: InteractionSource): DelegatableNode =
-        PressHighlightNode(interactionSource, color)
-}
-
-private class PressHighlightNode(
-    private val interactionSource: InteractionSource,
-    private val color: Color,
-) : Modifier.Node(), DrawModifierNode {
-    private var pressed = false
-
-    override fun onAttach() {
-        coroutineScope.launch {
-            var depth = 0
-            interactionSource.interactions.collect { interaction ->
-                when (interaction) {
-                    is PressInteraction.Press -> depth++
-                    is PressInteraction.Release, is PressInteraction.Cancel -> depth--
-                }
-                val nowPressed = depth > 0
-                if (pressed != nowPressed) {
-                    pressed = nowPressed
-                    invalidateDraw()
-                }
-            }
+        LocalExtendedColors provides if (dark) DarkExtendedColors else LightExtendedColors,
+        LocalIsDark provides dark,
+    ) {
+        MaterialTheme(colorScheme = scheme, typography = AppTypography) {
+            // 页面根节点不是 Surface,不显式提供的话未指定颜色的文字会落回纯黑,深色模式下看不见。
+            CompositionLocalProvider(LocalContentColor provides scheme.onSurface, content = content)
         }
     }
-
-    override fun ContentDrawScope.draw() {
-        if (pressed) drawRect(color)
-        drawContent()
-    }
 }
+
+// 品牌蓝色板,由 Material Theme Builder 以种子色 #769CDF 生成。
+
+private val LightScheme = lightColorScheme(
+    primary = Color(0xFF415F91),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFD6E3FF),
+    onPrimaryContainer = Color(0xFF284777),
+    secondary = Color(0xFF565F71),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFDAE2F9),
+    onSecondaryContainer = Color(0xFF3E4759),
+    tertiary = Color(0xFF705575),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFFAD8FD),
+    onTertiaryContainer = Color(0xFF573E5C),
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF93000A),
+    background = Color(0xFFF9F9FF),
+    onBackground = Color(0xFF191C20),
+    surface = Color(0xFFF9F9FF),
+    onSurface = Color(0xFF191C20),
+    surfaceVariant = Color(0xFFE0E2EC),
+    onSurfaceVariant = Color(0xFF44474E),
+    outline = Color(0xFF74777F),
+    outlineVariant = Color(0xFFC4C6D0),
+    scrim = Color(0xFF000000),
+    inverseSurface = Color(0xFF2E3036),
+    inverseOnSurface = Color(0xFFF0F0F7),
+    inversePrimary = Color(0xFFAAC7FF),
+    surfaceDim = Color(0xFFD9D9E0),
+    surfaceBright = Color(0xFFF9F9FF),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF3F3FA),
+    surfaceContainer = Color(0xFFEDEDF4),
+    surfaceContainerHigh = Color(0xFFE7E8EE),
+    surfaceContainerHighest = Color(0xFFE2E2E9),
+)
+
+private val DarkScheme = darkColorScheme(
+    primary = Color(0xFFAAC7FF),
+    onPrimary = Color(0xFF0A305F),
+    primaryContainer = Color(0xFF284777),
+    onPrimaryContainer = Color(0xFFD6E3FF),
+    secondary = Color(0xFFBEC6DC),
+    onSecondary = Color(0xFF283141),
+    secondaryContainer = Color(0xFF3E4759),
+    onSecondaryContainer = Color(0xFFDAE2F9),
+    tertiary = Color(0xFFDDBCE0),
+    onTertiary = Color(0xFF3F2844),
+    tertiaryContainer = Color(0xFF573E5C),
+    onTertiaryContainer = Color(0xFFFAD8FD),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF111318),
+    onBackground = Color(0xFFE2E2E9),
+    surface = Color(0xFF111318),
+    onSurface = Color(0xFFE2E2E9),
+    surfaceVariant = Color(0xFF44474E),
+    onSurfaceVariant = Color(0xFFC4C6D0),
+    outline = Color(0xFF8E9099),
+    outlineVariant = Color(0xFF44474E),
+    scrim = Color(0xFF000000),
+    inverseSurface = Color(0xFFE2E2E9),
+    inverseOnSurface = Color(0xFF2E3036),
+    inversePrimary = Color(0xFF415F91),
+    surfaceDim = Color(0xFF111318),
+    surfaceBright = Color(0xFF37393E),
+    surfaceContainerLowest = Color(0xFF0C0E13),
+    surfaceContainerLow = Color(0xFF191C20),
+    surfaceContainer = Color(0xFF1D2024),
+    surfaceContainerHigh = Color(0xFF282A2F),
+    surfaceContainerHighest = Color(0xFF33353A),
+)

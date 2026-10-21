@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui.screen.settings
 
+import org.linuxdo.android.ui.design.*
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -21,8 +24,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.dp
-import org.linuxdo.android.ui.design.IosRow
-import org.linuxdo.android.ui.design.IosTheme
+import org.linuxdo.android.ui.design.ListRow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -56,15 +58,15 @@ internal fun SettingsEntryRow(
     value: String? = null,
     icon: @Composable () -> Unit,
 ) {
-    IosRow(onClick = onClick) {
+    ListRow(onClick = onClick) {
         SettingIconBadge(bgColor = badgeColor, content = icon)
         Spacer(Modifier.width(12.dp))
-        Text(title, style = IosTheme.type.body, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
         if (value != null) {
-            Text(value, style = IosTheme.type.subheadline, color = IosTheme.colors.secondaryLabel)
+            Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(8.dp))
         }
-        Text("›", color = IosTheme.colors.tertiaryLabel, style = IosTheme.type.title3)
+        Text("›", color = MaterialTheme.colorScheme.outline, style = MaterialTheme.typography.titleLarge)
     }
 }
 
@@ -232,7 +234,7 @@ internal fun SettingDohIcon(tint: Color) {
 }
 
 @Composable
-internal fun DohGearIcon(tint: Color = Color(0xFF007AFF), modifier: Modifier = Modifier) {
+internal fun DohGearIcon(tint: Color = MaterialTheme.colorScheme.primary, modifier: Modifier = Modifier) {
     Canvas(modifier.size(15.dp)) {
         val cx = size.width / 2f
         val cy = size.height / 2f
@@ -255,7 +257,7 @@ internal fun DohGearIcon(tint: Color = Color(0xFF007AFF), modifier: Modifier = M
 }
 
 @Composable
-internal fun DohTrashIcon(tint: Color = Color(0xFFFF3B30), modifier: Modifier = Modifier) {
+internal fun DohTrashIcon(tint: Color = MaterialTheme.colorScheme.error, modifier: Modifier = Modifier) {
     Canvas(modifier.size(15.dp)) {
         val w = size.width
         val h = size.height

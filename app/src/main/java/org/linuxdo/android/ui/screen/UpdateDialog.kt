@@ -1,5 +1,7 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material3.MaterialTheme
+
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -37,7 +39,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
-import org.linuxdo.android.ui.design.IosTheme
 import androidx.compose.ui.text.font.FontWeight
 import java.util.Locale
 import org.linuxdo.android.ui.*
@@ -72,7 +73,7 @@ fun UpdateDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(18.dp))
-                .background(IosTheme.colors.card)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(horizontal = 20.dp, vertical = 20.dp),
         ) {
             Row(
@@ -84,32 +85,32 @@ fun UpdateDialog(
                         .clip(RoundedCornerShape(6.dp))
                         .background(
                             if (info.mandatory) {
-                                IosTheme.colors.destructive.copy(alpha = 0.14f)
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.14f)
                             } else {
-                                IosTheme.colors.accent.copy(alpha = 0.14f)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                             },
                         )
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                 ) {
                     Text(
                         text = if (info.mandatory) "必升版本" else "发现新版本",
-                        style = IosTheme.type.footnote,
-                        color = if (info.mandatory) IosTheme.colors.destructive else IosTheme.colors.accent,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (info.mandatory) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
                 Text(
                     text = "v$currentVersion → v${info.latestVersion}",
-                    style = IosTheme.type.footnote,
-                    color = IosTheme.colors.secondaryLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             Spacer(Modifier.height(10.dp))
             Text(
                 text = info.title,
-                style = IosTheme.type.title3,
-                color = IosTheme.colors.label,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Spacer(Modifier.height(10.dp))
@@ -118,14 +119,14 @@ fun UpdateDialog(
                     .fillMaxWidth()
                     .heightIn(min = 64.dp, max = 220.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(IosTheme.colors.fieldBackground)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .padding(12.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(
                     text = info.changelog,
-                    style = IosTheme.type.footnote,
-                    color = IosTheme.colors.label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 19.sp,
                 )
             }
@@ -134,8 +135,8 @@ fun UpdateDialog(
                 Spacer(Modifier.height(10.dp))
                 Text(
                     text = "当前版本包含关键协议或安全更新，请升级至最新版本后继续使用。",
-                    style = IosTheme.type.footnote,
-                    color = IosTheme.colors.destructive,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
 
@@ -160,8 +161,8 @@ fun UpdateDialog(
                                 "正在下载 ${(fraction * 100).toInt()}%　${formatUpdateBytes(downloadedBytes)} / ${formatUpdateBytes(totalBytes)}"
                             else -> "正在下载　${formatUpdateBytes(downloadedBytes)}"
                         },
-                        style = IosTheme.type.footnote,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(8.dp))
                     Box(
@@ -169,14 +170,14 @@ fun UpdateDialog(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp))
-                            .background(IosTheme.colors.fieldBackground),
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(fraction)
                                 .fillMaxHeight()
                                 .clip(RoundedCornerShape(3.dp))
-                                .background(IosTheme.colors.accent),
+                                .background(MaterialTheme.colorScheme.primary),
                         )
                     }
                     Spacer(Modifier.height(12.dp))
@@ -190,8 +191,8 @@ fun UpdateDialog(
                     ) {
                         Text(
                             text = "取消下载",
-                            style = IosTheme.type.subheadline,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -199,8 +200,8 @@ fun UpdateDialog(
                 ApkUpdateStage.Installing -> {
                     Text(
                         text = "已唤起系统安装程序，请在系统弹窗中确认安装。",
-                        style = IosTheme.type.footnote,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
                     UpdateSecondaryAction(text = "改用浏览器下载") {
@@ -211,8 +212,8 @@ fun UpdateDialog(
                 ApkUpdateStage.AwaitingPermission -> {
                     Text(
                         text = "系统需要你允许本应用「安装未知应用」。开启后会自动继续下载并安装。",
-                        style = IosTheme.type.footnote,
-                        color = IosTheme.colors.secondaryLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
                     UpdatePrimaryAction(text = "前往开启授权") {
@@ -234,8 +235,8 @@ fun UpdateDialog(
                     if (!errorMessage.isNullOrBlank()) {
                         Text(
                             text = errorMessage,
-                            style = IosTheme.type.footnote,
-                            color = IosTheme.colors.destructive,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
                         )
                         Spacer(Modifier.height(10.dp))
                     }
@@ -273,8 +274,8 @@ fun UpdateDialog(
                     ) {
                         Text(
                             text = "忽略此版本",
-                            style = IosTheme.type.subheadline,
-                            color = IosTheme.colors.secondaryLabel,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Box(
@@ -287,8 +288,8 @@ fun UpdateDialog(
                     ) {
                         Text(
                             text = "稍后提醒",
-                            style = IosTheme.type.subheadline,
-                            color = IosTheme.colors.accent,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -305,13 +306,13 @@ private fun UpdatePrimaryAction(text: String, onClick: () -> Unit) {
             .fillMaxWidth()
             .height(44.dp)
             .clip(RoundedCornerShape(11.dp))
-            .background(IosTheme.colors.accent)
+            .background(MaterialTheme.colorScheme.primary)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
-            style = IosTheme.type.body,
+            style = MaterialTheme.typography.bodyLarge,
             color = Color.White,
             fontWeight = FontWeight.SemiBold,
         )
@@ -331,8 +332,8 @@ private fun UpdateSecondaryAction(text: String, onClick: () -> Unit) {
     ) {
         Text(
             text = text,
-            style = IosTheme.type.subheadline,
-            color = IosTheme.colors.accent,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
