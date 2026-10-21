@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -18,12 +20,25 @@ android {
         ndk { abiFilters += "arm64-v8a" }
     }
 
+    // 发布签名:读取根目录 keystore.properties(已 gitignore),缺失时 release 构建不签名。
+    val keystorePropsFile = rootProject.file("keystore.properties")
+    val releaseSigning = if (keystorePropsFile.exists()) {
+        val props = Properties().apply { keystorePropsFile.inputStream().use { load(it) } }
+        signingConfigs.create("release") {
+            storeFile = rootProject.file(props.getProperty("storeFile"))
+            storePassword = props.getProperty("storePassword")
+            keyAlias = props.getProperty("keyAlias")
+            keyPassword = props.getProperty("keyPassword")
+        }
+    } else null
+
     buildTypes {
         debug {
             versionNameSuffix = "-debug"
         }
         release {
             isMinifyEnabled = false
+            signingConfig = releaseSigning
         }
     }
 
