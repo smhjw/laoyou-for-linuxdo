@@ -1,5 +1,11 @@
 package org.linuxdo.android.ui
 
+import org.linuxdo.android.ui.screen.DiagnosticsScreen
+import org.linuxdo.android.ui.screen.DraftsScreen
+import org.linuxdo.android.ui.screen.ProfileScreen
+import org.linuxdo.android.ui.screen.TopicCreatorSheet
+import org.linuxdo.android.ui.screen.UpdateDialog
+import org.linuxdo.android.ui.screen.settings.SettingsScreen
 import android.app.Dialog
 import android.content.Intent
 import android.net.Uri

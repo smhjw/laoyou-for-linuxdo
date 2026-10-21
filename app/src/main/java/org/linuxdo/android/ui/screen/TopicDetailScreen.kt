@@ -44,7 +44,7 @@ import androidx.compose.ui.zIndex
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import org.linuxdo.android.ui.RichMarkdownEditorView
+import org.linuxdo.android.ui.editor.RichMarkdownEditorView
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.geometry.Offset
@@ -149,7 +149,7 @@ import org.linuxdo.android.data.TreePost
 import org.linuxdo.android.data.DEFAULT_SUB_REPLY_LIMIT
 import org.linuxdo.android.data.threadRows
 import org.linuxdo.android.data.postAncestorIds
-import org.linuxdo.android.ui.IosTextAction
+import org.linuxdo.android.ui.design.IosTextAction
 import org.linuxdo.android.ui.ComposerTarget
 import org.linuxdo.android.ui.ComposerUiState
 import org.linuxdo.android.ui.DetailUiState
