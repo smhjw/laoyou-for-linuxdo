@@ -1,5 +1,8 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import org.linuxdo.android.ui.design.*
 
 import androidx.compose.animation.animateColorAsState
@@ -65,17 +68,25 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.scale
 import org.linuxdo.android.ui.LoginUiState
 import org.linuxdo.android.ui.design.LoadingIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 
-private val GradientStart = Color(0xFFEEF2FF)
-private val GradientEnd   = Color(0xFFF5F0FF)
-private val AccentBlue    = Color(0xFF4B7FFF)
-private val AccentBlue2   = Color(0xFF6B9FFF)
-private val FieldBorder   = Color(0xFFDDE3F0)
-private val FieldBg       = Color(0xFFF8FAFF)
-private val TabActive     = AccentBlue
-private val TabInactive   = Color(0xFF9AA5BB)
-
-/** 原生登录页面，按设计图实现双 Tab（账号密码 / 验证码）。 */
+/** 原生登录页面:Material 3 表单,双 Tab(账号密码 / 验证码)。 */
 @Composable
 fun LoginScreen(
     state: LoginUiState,
@@ -128,7 +139,7 @@ fun LoginScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(GradientStart, GradientEnd)))
+            .background(MaterialTheme.colorScheme.surface)
             .clickable(indication = null, interactionSource = remember {
                 androidx.compose.foundation.interaction.MutableInteractionSource()
             }) { focusManager.clearFocus() }
@@ -137,7 +148,7 @@ fun LoginScreen(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 32.dp),
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(72.dp))
@@ -150,14 +161,13 @@ fun LoginScreen(
             // 标题
             Text(
                 "欢迎登录",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1A2340),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                "Welcome back",
-                fontSize = 13.sp,
-                color = Color(0xFF9AA5BB),
+                "登录你的 LINUX DO 账号",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
 
@@ -172,7 +182,7 @@ fun LoginScreen(
                 }
             })
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(24.dp))
 
             if (tab == 0) {
                 // ── 账号密码登录 ──
@@ -182,7 +192,7 @@ fun LoginScreen(
                         loginText = it
                         if (state.secondFactorRequired) onResetSecondFactor()
                     },
-                    placeholder = "请输入用户名/手机号/邮箱",
+                    placeholder = "用户名 / 手机号 / 邮箱",
                     leadingIcon = { UserIcon() },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 )
@@ -195,16 +205,10 @@ fun LoginScreen(
                         passwordText = it
                         if (state.secondFactorRequired) onResetSecondFactor()
                     },
-                    placeholder = "请输入密码",
+                    placeholder = "密码",
                     leadingIcon = { LockIcon() },
                     trailingContent = {
-                        Box(
-                            Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .clickable { passwordVisible = !passwordVisible },
-                            contentAlignment = Alignment.Center,
-                        ) {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             EyeIcon(open = passwordVisible)
                         }
                     },
@@ -258,38 +262,27 @@ fun LoginScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp),
+                        .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .clickable { rememberPassword = !rememberPassword }
-                            .padding(vertical = 4.dp, horizontal = 2.dp),
+                            .clip(MaterialTheme.shapes.small)
+                            .toggleable(value = rememberPassword, role = Role.Checkbox) { rememberPassword = it }
+                            .padding(end = 8.dp),
                     ) {
-                        RememberCheckBox(checked = rememberPassword)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "记住密码",
-                            fontSize = 13.sp,
-                            color = Color(0xFF1A2340),
-                        )
+                        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                            RememberCheckBox(checked = rememberPassword)
+                        }
+                        Text("记住密码", style = MaterialTheme.typography.bodyMedium)
                     }
 
-                    Text(
-                        "忘记密码？",
-                        fontSize = 13.sp,
-                        color = AccentBlue,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .clickable { showForgotDialog = true }
-                            .padding(horizontal = 4.dp, vertical = 2.dp),
-                    )
+                    TextButton(onClick = { showForgotDialog = true }) { Text("忘记密码？") }
                 }
 
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(20.dp))
 
                 val canSubmitPwd = loginText.isNotBlank() &&
                     passwordText.isNotBlank() &&
@@ -316,7 +309,7 @@ fun LoginScreen(
                 LoginField(
                     value = emailText,
                     onValueChange = { emailText = it },
-                    placeholder = "请输入邮箱",
+                    placeholder = "邮箱",
                     leadingIcon = { EmailIcon() },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
@@ -329,7 +322,7 @@ fun LoginScreen(
                 // 验证码行：输入框 + 获取按钮
                 Row(
                     Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Bottom,
                 ) {
                     LoginField(
                         value = codeText,
@@ -337,7 +330,7 @@ fun LoginScreen(
                             codeText = it
                             if (state.secondFactorRequired) onResetSecondFactor()
                         },
-                        placeholder = "粘贴验证码或完整登录链接",
+                        placeholder = "验证码或登录链接",
                         leadingIcon = { ShieldIcon() },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(
@@ -350,7 +343,7 @@ fun LoginScreen(
                         }),
                     )
 
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(8.dp))
 
                     // 获取验证码按钮
                     SendCodeButton(
@@ -393,14 +386,12 @@ fun LoginScreen(
                 // 提示文字
                 Text(
                     "验证码将通过邮件发送。可直接粘贴邮件里的完整登录链接，或其中 /session/email-login/ 后面的 token",
-                    fontSize = 12.sp,
-                    color = Color(0xFF9AA5BB),
-                    textAlign = TextAlign.Center,
-                    lineHeight = 18.sp,
-                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 )
 
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(20.dp))
 
                 val canSubmitEmail = emailText.isNotBlank() &&
                     codeText.isNotBlank() &&
@@ -423,36 +414,24 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(20.dp))
 
             // ── 或 分割线 ──
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(0.8.dp)
-                        .background(Color(0xFFDDE3F0)),
-                )
+                HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
                 Text(
                     text = "或",
-                    fontSize = 12.sp,
-                    color = Color(0xFF9AA5BB),
-                    modifier = Modifier.padding(horizontal = 14.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(0.8.dp)
-                        .background(Color(0xFFDDE3F0)),
-                )
+                HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
             }
 
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(20.dp))
 
             // ── 网页授权登录按钮 ──
             WebAuthButton(
@@ -496,7 +475,7 @@ fun LoginScreen(
                         val sf = secondFactorText.trim().takeIf { state.secondFactorRequired && it.isNotBlank() }
                         onOpenWebLogin(u, p, sf, secondFactorMethod, rememberPassword)
                     }) {
-                        Text("进入安全验证登录", fontWeight = FontWeight.Bold, color = AccentBlue)
+                        Text("进入安全验证登录")
                     }
                 } else {
                     TextButton(onClick = onDismissError) { Text("确定") }
@@ -536,7 +515,7 @@ fun LoginScreen(
                     onDismissRiskControl()
                     onStartWebAuth()
                 }) {
-                    Text("网页授权认证", color = AccentBlue, fontWeight = FontWeight.Bold)
+                    Text("网页授权认证")
                 }
             },
             dismissButton = {
@@ -557,11 +536,11 @@ fun LoginScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 ) {
-                    LoadingIndicator(diameter = 28.dp, color = AccentBlue)
+                    LoadingIndicator(diameter = 28.dp)
                     Spacer(Modifier.height(16.dp))
                     Text(
                         state.webAuthMessage ?: "正在进行网页授权认证...",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -587,92 +566,59 @@ private fun SecondFactorSection(
     focusRequester: FocusRequester,
     onDone: () -> Unit,
 ) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = 0.7f))
-            .border(1.dp, AccentBlue.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                if (method == 1) "两步验证 · 动态口令 (TOTP)" else "两步验证 · 备用恢复码",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1A2340),
-            )
-            Text(
-                if (method == 1) "改用备用码" else "改用动态口令",
-                fontSize = 12.sp,
-                color = AccentBlue,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .clickable { onMethodChange(if (method == 1) 2 else 1) }
-                    .padding(horizontal = 4.dp, vertical = 2.dp),
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    if (method == 1) "两步验证 · 动态口令 (TOTP)" else "两步验证 · 备用恢复码",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                TextButton(onClick = { onMethodChange(if (method == 1) 2 else 1) }) {
+                    Text(if (method == 1) "改用备用码" else "改用动态口令")
+                }
+            }
+            LoginField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = if (method == 1) "6 位身份验证器验证码" else "备用恢复码",
+                leadingIcon = { ShieldIcon() },
+                modifier = Modifier.focusRequester(focusRequester),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (method == 1) KeyboardType.NumberPassword else KeyboardType.Ascii,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { onDone() }),
             )
         }
-        LoginField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = if (method == 1) "请输入 6 位身份验证器验证码" else "请输入备用恢复码",
-            leadingIcon = { ShieldIcon() },
-            modifier = Modifier.focusRequester(focusRequester),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = if (method == 1) KeyboardType.NumberPassword else KeyboardType.Ascii,
-                imeAction = ImeAction.Done,
-            ),
-            keyboardActions = KeyboardActions(onDone = { onDone() }),
-        )
     }
 }
 
 // ── Tab 切换栏 ──────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LoginTabBar(selected: Int, onSelect: (Int) -> Unit) {
-    val tabs = listOf("账号密码登录", "验证码登录")
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(0.dp),
+    PrimaryTabRow(
+        selectedTabIndex = selected,
+        containerColor = Color.Transparent,
+        divider = {},
     ) {
-        tabs.forEachIndexed { index, label ->
-            val isActive = selected == index
-            val color by animateColorAsState(
-                targetValue = if (isActive) TabActive else TabInactive,
-                animationSpec = tween(200),
-                label = "tab-color-$index",
+        listOf("账号密码登录", "验证码登录").forEachIndexed { index, label ->
+            Tab(
+                selected = selected == index,
+                onClick = { onSelect(index) },
+                text = { Text(label, style = MaterialTheme.typography.titleSmall) },
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Column(
-                Modifier
-                    .weight(1f)
-                    .clickable(indication = null, interactionSource = remember {
-                        androidx.compose.foundation.interaction.MutableInteractionSource()
-                    }) { onSelect(index) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    label,
-                    fontSize = 15.sp,
-                    fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
-                    color = color,
-                )
-                Spacer(Modifier.height(8.dp))
-                Box(
-                    Modifier
-                        .height(2.dp)
-                        .fillMaxWidth(if (isActive) 0.6f else 0f)
-                        .background(
-                            Brush.horizontalGradient(listOf(AccentBlue, AccentBlue2)),
-                            RoundedCornerShape(1.dp),
-                        ),
-                )
-            }
         }
     }
 }
@@ -694,26 +640,15 @@ private fun LoginField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(54.dp),
-        placeholder = {
-            Text(placeholder, fontSize = 14.sp, color = Color(0xFFBBC4D6))
-        },
-        leadingIcon = { Box(Modifier.padding(start = 4.dp)) { leadingIcon() } },
-        trailingIcon = trailingContent?.let { { it() } },
+        label = { Text(placeholder) },
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingContent,
+        singleLine = true,
         visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            unfocusedContainerColor = FieldBg,
-            focusedContainerColor = Color.White,
-            unfocusedBorderColor = FieldBorder,
-            focusedBorderColor = AccentBlue.copy(alpha = 0.6f),
-            cursorColor = AccentBlue,
-        ),
+        shape = MaterialTheme.shapes.large,
+        modifier = modifier.fillMaxWidth(),
     )
 }
 
@@ -726,31 +661,16 @@ private fun LoginButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .shadow(if (enabled) 8.dp else 0.dp, RoundedCornerShape(25.dp), ambientColor = AccentBlue.copy(alpha = 0.3f))
-            .clip(RoundedCornerShape(25.dp))
-            .background(
-                if (enabled)
-                    Brush.horizontalGradient(listOf(AccentBlue, AccentBlue2))
-                else
-                    Brush.horizontalGradient(listOf(Color(0xFFCDD5E8), Color(0xFFCDD5E8))),
-            )
-            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
-        contentAlignment = Alignment.Center,
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth().height(52.dp),
     ) {
         if (loading) {
-            LoadingIndicator(diameter = 22.dp, color = Color.White)
-        } else {
-            Text(
-                text,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-            )
+            LoadingIndicator(diameter = 20.dp, color = MaterialTheme.colorScheme.onPrimary)
+            Spacer(Modifier.width(12.dp))
         }
+        Text(text, style = MaterialTheme.typography.titleSmall)
     }
 }
 
@@ -762,31 +682,8 @@ private fun SendCodeButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    Box(
-        Modifier
-            .height(54.dp)
-            .width(96.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (enabled)
-                    Brush.verticalGradient(listOf(AccentBlue, AccentBlue2))
-                else
-                    Brush.verticalGradient(listOf(Color(0xFFCDD5E8), Color(0xFFCDD5E8))),
-            )
-            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (loading) {
-            LoadingIndicator(diameter = 18.dp, color = Color.White)
-        } else {
-            Text(
-                "获取验证码",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-            )
-        }
+    FilledTonalButton(onClick = onClick, enabled = enabled, modifier = Modifier.height(56.dp)) {
+        if (loading) LoadingIndicator(diameter = 18.dp) else Text("获取验证码")
     }
 }
 
@@ -794,292 +691,88 @@ private fun SendCodeButton(
 
 @Composable
 private fun AppIconBadge() {
-    Box(
-        Modifier
-            .size(80.dp)
-            .shadow(12.dp, RoundedCornerShape(20.dp), ambientColor = Color(0x334B7FFF))
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color.White),
-        contentAlignment = Alignment.Center,
+    val stemColor = MaterialTheme.colorScheme.onSurface
+    Surface(
+        modifier = Modifier.size(88.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 2.dp,
     ) {
-        // 绘制 ic_launcher_foreground 的两条路径
-        Canvas(Modifier.size(54.dp)) {
-            val scaleX = size.width / 108f
-            val scaleY = size.height / 108f
-            scale(scaleX, scaleY, Offset.Zero) {
-                // 深色竖线（L形主体）
-                val p1 = Path().apply {
-                    moveTo(34f, 27f); cubicTo(34f, 24f, 37f, 24f, 37f, 24f)
-                    lineTo(44f, 24f); cubicTo(47f, 24f, 47f, 27f, 47f, 27f)
-                    lineTo(47f, 63f); lineTo(70f, 63f); lineTo(49f, 84f)
-                    lineTo(37f, 84f); cubicTo(34f, 84f, 34f, 81f, 34f, 81f); close()
+        Box(contentAlignment = Alignment.Center) {
+            // 与启动图标 ic_launcher_foreground 同一组路径;L 形主体跟随前景色,深色模式下也看得见。
+            Canvas(Modifier.size(58.dp)) {
+                scale(size.width / 108f, size.height / 108f, Offset.Zero) {
+                    val p1 = Path().apply {
+                        moveTo(34f, 27f); cubicTo(34f, 24f, 37f, 24f, 37f, 24f)
+                        lineTo(44f, 24f); cubicTo(47f, 24f, 47f, 27f, 47f, 27f)
+                        lineTo(47f, 63f); lineTo(70f, 63f); lineTo(49f, 84f)
+                        lineTo(37f, 84f); cubicTo(34f, 84f, 34f, 81f, 34f, 81f); close()
+                    }
+                    drawPath(p1, stemColor)
+                    val p2 = Path().apply {
+                        moveTo(54f, 84f); lineTo(76f, 62f)
+                        cubicTo(78f, 61f, 78f, 64f, 78f, 64f)
+                        lineTo(78f, 81f); cubicTo(78f, 84f, 75f, 84f, 75f, 84f); close()
+                    }
+                    drawPath(p2, BrandBlue)
                 }
-                drawPath(p1, Color(0xFF202226))
-                // 蓝色折角
-                val p2 = Path().apply {
-                    moveTo(54f, 84f); lineTo(76f, 62f)
-                    cubicTo(78f, 61f, 78f, 64f, 78f, 64f)
-                    lineTo(78f, 81f); cubicTo(78f, 84f, 75f, 84f, 75f, 84f); close()
-                }
-                drawPath(p2, Color(0xFF4055DF))
             }
         }
     }
 }
+
+/** 启动图标里的品牌蓝。 */
+private val BrandBlue = Color(0xFF4055DF)
 
 // ── 小图标（Canvas 手绘，不依赖 Material Icons） ──────────────────
 
-/** 用户图标 */
 @Composable
-private fun UserIcon() {
-    Canvas(Modifier.size(18.dp)) {
-        val cx = size.width / 2f
-        val cy = size.height / 2f
-        drawCircle(Color(0xFFBBC4D6), radius = size.width * 0.22f, center = Offset(cx, cy * 0.7f))
-        drawArc(
-            color = Color(0xFFBBC4D6),
-            startAngle = 180f, sweepAngle = 180f, useCenter = false,
-            topLeft = Offset(size.width * 0.1f, cy * 0.9f),
-            size = androidx.compose.ui.geometry.Size(size.width * 0.8f, size.height * 0.6f),
-            style = androidx.compose.ui.graphics.drawscope.Fill,
-        )
-    }
+private fun UserIcon() = FieldIcon(Icons.Outlined.Person)
+
+@Composable
+private fun FieldIcon(icon: ImageVector) {
+    Icon(icon, contentDescription = null)
 }
 
-/** 锁图标 */
 @Composable
-private fun LockIcon() {
-    Canvas(Modifier.size(18.dp)) {
-        val w = size.width; val h = size.height
-        // 锁体
-        drawRoundRect(
-            color = Color(0xFFBBC4D6),
-            topLeft = Offset(w * 0.15f, h * 0.45f),
-            size = androidx.compose.ui.geometry.Size(w * 0.7f, h * 0.5f),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.12f),
-        )
-        // 锁孔圆圈（白色镂空效果）
-        drawCircle(Color.White, w * 0.1f, Offset(w / 2f, h * 0.67f))
-        // 锁梁（弧形）- 用矩形框模拟
-        drawArc(
-            color = Color(0xFFBBC4D6),
-            startAngle = 200f, sweepAngle = -220f, useCenter = false,
-            topLeft = Offset(w * 0.25f, h * 0.08f),
-            size = androidx.compose.ui.geometry.Size(w * 0.5f, h * 0.5f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.13f),
+private fun LockIcon() = FieldIcon(Icons.Outlined.Lock)
 
-        )
-    }
-}
-
-/** 邮件图标 */
 @Composable
-private fun EmailIcon() {
-    Canvas(Modifier.size(18.dp)) {
-        val w = size.width; val h = size.height
-        drawRoundRect(
-            color = Color(0xFFBBC4D6),
-            topLeft = Offset(w * 0.05f, h * 0.2f),
-            size = androidx.compose.ui.geometry.Size(w * 0.9f, h * 0.6f),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.1f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.1f),
-        )
-        // 信封折角
-        val path = Path().apply {
-            moveTo(w * 0.05f, h * 0.25f)
-            lineTo(w * 0.5f, h * 0.55f)
-            lineTo(w * 0.95f, h * 0.25f)
-        }
-        drawPath(path, Color(0xFFBBC4D6), style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.1f))
+private fun EmailIcon() = FieldIcon(Icons.Outlined.Email)
 
-    }
-}
-
-/** 盾牌图标（验证码） */
 @Composable
-private fun ShieldIcon() {
-    Canvas(Modifier.size(18.dp)) {
-        val w = size.width; val h = size.height
-        val path = Path().apply {
-            moveTo(w * 0.5f, h * 0.05f)
-            lineTo(w * 0.95f, h * 0.25f)
-            lineTo(w * 0.95f, h * 0.6f)
-            cubicTo(w * 0.95f, h * 0.85f, w * 0.5f, h * 0.97f, w * 0.5f, h * 0.97f)
-            cubicTo(w * 0.5f, h * 0.97f, w * 0.05f, h * 0.85f, w * 0.05f, h * 0.6f)
-            lineTo(w * 0.05f, h * 0.25f)
-            close()
-        }
-        drawPath(path, Color(0xFFBBC4D6))
-    }
-}
+private fun ShieldIcon() = FieldIcon(Icons.Outlined.Key)
 
-/** 眼睛图标：open=true 时眼睛睁开（可见），open=false 时加一条斜线（隐藏） */
 @Composable
 private fun EyeIcon(open: Boolean) {
-    val color = if (open) AccentBlue else Color(0xFFBBC4D6)
-    Canvas(Modifier.size(22.dp)) {
-        val w = size.width; val h = size.height
-        val cx = w / 2f; val cy = h / 2f
-
-        // 外轮廓：眼睛形状
-        val eyePath = Path().apply {
-            moveTo(w * 0.05f, cy)
-            cubicTo(cx * 0.5f, h * 0.25f, cx * 1.5f, h * 0.25f, w * 0.95f, cy)
-            cubicTo(cx * 1.5f, h * 0.75f, cx * 0.5f, h * 0.75f, w * 0.05f, cy)
-            close()
-        }
-        drawPath(eyePath, color, style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.08f))
-
-        // 瞳孔
-        drawCircle(color, radius = w * 0.14f, center = Offset(cx, cy))
-
-        // 关闭态：斜线穿过
-        if (!open) {
-            val slashPath = Path().apply {
-                moveTo(w * 0.2f, h * 0.2f)
-                lineTo(w * 0.8f, h * 0.8f)
-            }
-            drawPath(
-                slashPath,
-                Color(0xFFBBC4D6),
-                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                    width = w * 0.09f,
-                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                ),
-            )
-        }
-    }
+    Icon(
+        if (open) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+        contentDescription = if (open) "隐藏密码" else "显示密码",
+    )
 }
 
 // ── 网页授权登录相关组件 ──────────────────────────────────────────
 
-/** 地球/网页图标（Canvas 手绘，对齐设计图） */
-@Composable
-private fun GlobeIcon(
-    modifier: Modifier = Modifier.size(19.dp),
-    color: Color = AccentBlue,
-) {
-    Canvas(modifier) {
-        val w = size.width
-        val h = size.height
-        val strokeW = 1.6.dp.toPx()
-        val radius = (w.coerceAtMost(h) / 2f) - strokeW / 2f
-        val cx = w / 2f
-        val cy = h / 2f
-
-        // 外圆
-        drawCircle(
-            color = color,
-            radius = radius,
-            center = Offset(cx, cy),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW),
-        )
-        // 赤道水平线
-        drawLine(
-            color = color,
-            start = Offset(cx - radius, cy),
-            end = Offset(cx + radius, cy),
-            strokeWidth = strokeW,
-        )
-        // 本初子午线（垂直中线）
-        drawLine(
-            color = color,
-            start = Offset(cx, cy - radius),
-            end = Offset(cx, cy + radius),
-            strokeWidth = strokeW,
-        )
-        // 经线弧（椭圆）
-        drawOval(
-            color = color,
-            topLeft = Offset(cx - radius * 0.52f, cy - radius),
-            size = androidx.compose.ui.geometry.Size(radius * 1.04f, radius * 2f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW),
-        )
-    }
-}
-
-/** 网页授权登录药丸按钮（白底蓝边，对齐设计图） */
 @Composable
 private fun WebAuthButton(
     loading: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .clip(RoundedCornerShape(25.dp))
-            .border(
-                width = 1.dp,
-                color = if (enabled) Color(0xFF6B9FFF) else Color(0xFFDDE3F0),
-                shape = RoundedCornerShape(25.dp),
-            )
-            .background(Color.White)
-            .then(if (enabled && !loading) Modifier.clickable(onClick = onClick) else Modifier),
-        contentAlignment = Alignment.Center,
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth().height(52.dp),
     ) {
-        if (loading) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                LoadingIndicator(diameter = 18.dp, color = AccentBlue)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "正在授权...",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = AccentBlue,
-                )
-            }
-        } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                GlobeIcon(color = if (enabled) AccentBlue else Color(0xFFBBC4D6))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "网页授权登录",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (enabled) AccentBlue else Color(0xFF9AA5BB),
-                )
-            }
-        }
+        if (loading) LoadingIndicator(diameter = 18.dp)
+        else Icon(Icons.Outlined.Language, contentDescription = null, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(if (loading) "正在授权..." else "网页授权登录", style = MaterialTheme.typography.titleSmall)
     }
 }
 
 @Composable
 private fun RememberCheckBox(checked: Boolean) {
-    Box(
-        modifier = Modifier
-            .size(18.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(if (checked) Color(0xFF3F69A8) else Color.White)
-            .border(
-                width = 1.dp,
-                color = if (checked) Color(0xFF3F69A8) else FieldBorder,
-                shape = RoundedCornerShape(4.dp),
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (checked) {
-            Canvas(modifier = Modifier.size(11.dp)) {
-                val path = Path().apply {
-                    moveTo(size.width * 0.15f, size.height * 0.52f)
-                    lineTo(size.width * 0.42f, size.height * 0.82f)
-                    lineTo(size.width * 0.88f, size.height * 0.22f)
-                }
-                drawPath(
-                    path = path,
-                    color = Color.White,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        width = 2.dp.toPx(),
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                        join = androidx.compose.ui.graphics.StrokeJoin.Round,
-                    ),
-                )
-            }
-        }
-    }
+    // 整行(含文字)负责切换,复选框本身只显示状态。
+    Checkbox(checked = checked, onCheckedChange = null)
 }
-

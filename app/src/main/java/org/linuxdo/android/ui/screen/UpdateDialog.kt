@@ -1,5 +1,9 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 
 import android.content.Context
@@ -72,9 +76,9 @@ fun UpdateDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .padding(horizontal = 20.dp, vertical = 20.dp),
+                .clip(MaterialTheme.shapes.extraLarge)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(24.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -82,7 +86,7 @@ fun UpdateDialog(
             ) {
                 Box(
                     Modifier
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(MaterialTheme.shapes.small)
                         .background(
                             if (info.mandatory) {
                                 MaterialTheme.colorScheme.error.copy(alpha = 0.14f)
@@ -118,7 +122,7 @@ fun UpdateDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 64.dp, max = 220.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .padding(12.dp)
                     .verticalScroll(rememberScrollState()),
@@ -165,36 +169,13 @@ fun UpdateDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(fraction)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(MaterialTheme.colorScheme.primary),
-                        )
+                    if (totalBytes > 0L) {
+                        LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
+                    } else {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     }
                     Spacer(Modifier.height(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { onCancelDownload() }
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "取消下载",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    TextButton(onClick = onCancelDownload, modifier = Modifier.align(Alignment.End)) { Text("取消下载") }
                 }
 
                 ApkUpdateStage.Installing -> {
@@ -261,37 +242,11 @@ fun UpdateDialog(
                 Spacer(Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { onDismiss(true) }
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "忽略此版本",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { onDismiss(false) }
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "稍后提醒",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
+                    TextButton(onClick = { onDismiss(true) }) { Text("忽略此版本") }
+                    TextButton(onClick = { onDismiss(false) }) { Text("稍后提醒") }
                 }
             }
         }
@@ -301,41 +256,13 @@ fun UpdateDialog(
 /** 升级对话框的主操作按钮。 */
 @Composable
 private fun UpdatePrimaryAction(text: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .clip(RoundedCornerShape(11.dp))
-            .background(MaterialTheme.colorScheme.primary)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold,
-        )
-    }
+    Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(text) }
 }
 
-/** 升级对话框的次要操作，用于浏览器兜底这类退路。 */
+/** 升级对话框的次要操作,用于浏览器兜底这类退路。 */
 @Composable
 private fun UpdateSecondaryAction(text: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
-    }
+    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(text) }
 }
 
 /** 下载进度用的字节展示：不足 1 MB 时用 KB，避免一直停在 0.0 MB。 */

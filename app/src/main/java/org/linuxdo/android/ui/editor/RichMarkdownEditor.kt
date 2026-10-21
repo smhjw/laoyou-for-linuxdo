@@ -1,5 +1,6 @@
 package org.linuxdo.android.ui.editor
 
+import androidx.core.graphics.ColorUtils
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
@@ -140,8 +141,11 @@ internal class CreatorMediaSpan(
         canvas.save()
         canvas.clipPath(cardPath)
 
+        // 卡片底色、边框和文字都跟随编辑器当前的前景色,深色模式下同样可读
+        val fg = view.currentTextColor
+        val fgSecondary = view.currentHintTextColor
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (media.isImage) android.graphics.Color.argb(24, 0, 0, 0) else android.graphics.Color.argb(16, 0, 0, 0)
+            color = ColorUtils.setAlphaComponent(fg, if (media.isImage) 24 else 16)
         }
         canvas.drawRect(lastDrawBounds, bgPaint)
 
@@ -166,7 +170,7 @@ internal class CreatorMediaSpan(
                 canvas.drawBitmap(bmp, matrix, bmpPaint)
             } else {
                 val tipPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = android.graphics.Color.GRAY
+                    color = fgSecondary
                     textSize = 14f * density
                     textAlign = Paint.Align.CENTER
                 }
@@ -194,14 +198,14 @@ internal class CreatorMediaSpan(
             canvas.drawText("📎", drawLeft + 12f * density, lastDrawBounds.centerY() + 7f * density, iconPaint)
 
             val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.DKGRAY
+                color = fg
                 textSize = 14f * density
                 isFakeBoldText = true
             }
             canvas.drawText(media.name, drawLeft + 42f * density, lastDrawBounds.centerY() - 2f * density, namePaint)
 
             val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.GRAY
+                color = fgSecondary
                 textSize = 11f * density
             }
             canvas.drawText("附件已关联", drawLeft + 42f * density, lastDrawBounds.centerY() + 16f * density, subPaint)
@@ -211,7 +215,7 @@ internal class CreatorMediaSpan(
 
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            color = android.graphics.Color.argb(30, 0, 0, 0)
+            color = ColorUtils.setAlphaComponent(fg, 30)
             strokeWidth = 1f * density
         }
         canvas.drawRoundRect(lastDrawBounds, cornerRadius, cornerRadius, borderPaint)

@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
-/** 把 Discourse 的 ISO 时间戳格式化成 iOS 论坛客户端惯用的相对时间。 */
+/** 把 Discourse 的 ISO 时间戳格式化成论坛客户端惯用的相对时间。 */
 object RelativeTime {
 
     fun format(iso: String?, now: Instant = Instant.now()): String {

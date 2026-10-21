@@ -1334,7 +1334,7 @@ private fun CategoryVariantSelector(
 
 /** 分类等级药丸。色值与话题卡上的 Lv 徽章同源,同一个 Lv 在各页面是同一种颜色。 */
 @Composable
-private fun LevelPill(level: Int) {
+internal fun LevelPill(level: Int) {
     val (bg, border, text) = levelPillColors(level, AppTheme.isDark)
     Box(
         Modifier

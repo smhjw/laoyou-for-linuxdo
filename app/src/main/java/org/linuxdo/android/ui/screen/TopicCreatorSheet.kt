@@ -1,5 +1,31 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.outlined.Reply
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ClearAll
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.SaveAs
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.vector.ImageVector
+import org.linuxdo.android.ui.design.AppTheme
 import org.linuxdo.android.ui.design.*
 import androidx.compose.material3.MaterialTheme
 
@@ -168,93 +194,64 @@ fun TopicCreatorSheet(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(MaterialTheme.colorScheme.surface)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = {},
             ),
     ) {
-        // 顶部操作栏：关闭 ✕ + 标题 + 保存 + 发布
+        // 顶部操作栏:关闭 + 标题 + 保存 + 发布
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
-                .padding(horizontal = 12.dp),
+                .height(64.dp)
+                .padding(start = 4.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                    .clickable(enabled = !state.savingDraft && !state.submitting) { attemptClose() },
-                contentAlignment = Alignment.Center,
+            IconButton(
+                onClick = { attemptClose() },
+                enabled = !state.savingDraft && !state.submitting,
             ) {
-                Text(
-                    text = "✕",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Icon(Icons.Filled.Close, contentDescription = "关闭")
             }
-
-            Spacer(Modifier.width(10.dp))
 
             Text(
                 text = if (state.isReplyDraft) "编辑回复草稿" else "创建新话题",
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).padding(start = 4.dp),
             )
 
-            // 保存草稿按钮
-            val canSave = state.canSaveDraft
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(
-                        if (canSave) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                        else MaterialTheme.colorScheme.surfaceContainerHighest,
-                    )
-                    .clickable(enabled = canSave) {
-                        editorView?.exportToMarkdown()?.let { onRawChange(it) }
-                        onSaveDraft(false)
-                    }
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
-                contentAlignment = Alignment.Center,
+            TextButton(
+                onClick = {
+                    editorView?.exportToMarkdown()?.let { onRawChange(it) }
+                    onSaveDraft(false)
+                },
+                enabled = state.canSaveDraft,
             ) {
-                Text(
-                    text = if (state.savingDraft) "保存中…" else "保存",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                )
+                Text(if (state.savingDraft) "保存中…" else "保存")
             }
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(4.dp))
 
-            // 发布按钮
-            val canPublish = state.canSubmit
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(
-                        if (canPublish) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                    )
-                    .clickable(enabled = canPublish) {
-                        editorView?.exportToMarkdown()?.let { onRawChange(it) }
-                        onSubmit()
-                    }
-                    .padding(horizontal = 15.dp, vertical = 7.dp),
-                contentAlignment = Alignment.Center,
+            Button(
+                onClick = {
+                    editorView?.exportToMarkdown()?.let { onRawChange(it) }
+                    onSubmit()
+                },
+                enabled = state.canSubmit,
+                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
             ) {
-                Text(
-                    text = if (state.submitting) "发布中…" else if (state.isReplyDraft) "发送" else "发布",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White,
-                )
+                if (state.submitting) {
+                    LoadingIndicator(diameter = 16.dp, color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(if (state.submitting) "发布中…" else if (state.isReplyDraft) "发送" else "发布")
             }
         }
 
@@ -262,45 +259,30 @@ fun TopicCreatorSheet(
 
         // 错误或保存成功轻提示
         state.error?.let { err ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.10f))
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = err,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            ComposerBanner(
+                text = err,
+                icon = Icons.Outlined.ErrorOutline,
+                container = MaterialTheme.colorScheme.errorContainer,
+                content = MaterialTheme.colorScheme.onErrorContainer,
+            )
         }
 
         state.notice?.let { msg ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF52C41A).copy(alpha = 0.12f))
-                    .padding(horizontal = 16.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "✓ $msg",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                    color = Color(0xFF389E0D),
-                )
-            }
+            ComposerBanner(
+                text = msg,
+                icon = Icons.Outlined.CheckCircle,
+                container = AppTheme.colors.successContainer,
+                content = AppTheme.colors.onSuccessContainer,
+            )
         }
 
         if (!state.isReplyDraft) {
-            // 分类与标签在同一行，高 38.dp，RoundedCornerShape(50) 胶囊形态，样式高度一致，无黄色底色
+            // 分类与标签并排,两个等高的 outlined 选择框
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 左侧分类胶囊：宽度充裕，未选择时也具有良好开阔度
@@ -312,12 +294,11 @@ fun TopicCreatorSheet(
                 Row(
                     modifier = Modifier
                         .weight(1.15f)
-                        .height(38.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f), RoundedCornerShape(50))
+                        .height(40.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
                         .clickable { showCategoryDialog = true }
-                        .padding(horizontal = 14.dp),
+                        .padding(start = 12.dp, end = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (selectedCategory != null) {
@@ -337,26 +318,25 @@ fun TopicCreatorSheet(
                         }
                         Text(
                             text = if (level > 0) "$baseName Lv.$level" else baseName.orEmpty(),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false),
+                            modifier = Modifier.weight(1f),
                         )
                     } else {
                         Text(
-                            text = "选择分类…",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "选择分类",
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
-                            modifier = Modifier.weight(1f, fill = false),
+                            modifier = Modifier.weight(1f),
                         )
                     }
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = "▾",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Icon(
+                        Icons.Filled.ArrowDropDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -376,52 +356,39 @@ fun TopicCreatorSheet(
                         }
                     }
 
+                    val tagsSelected = state.tags.isNotEmpty()
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(38.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f), RoundedCornerShape(50))
+                            .height(40.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .background(if (tagsSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                            .then(
+                                if (tagsSelected) Modifier
+                                else Modifier.border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small),
+                            )
                             .clickable { showTagDropdown = true }
-                            .padding(horizontal = 12.dp),
+                            .padding(start = 12.dp, end = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        ComposerTagIcon(
-                            tint = if (state.tags.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(15.dp),
+                        val tagContent = if (tagsSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                        ComposerTagIcon(tint = tagContent, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = if (tagsSelected) state.tags.joinToString(", ") else "添加标签",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = tagContent,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
                         )
-                        Spacer(Modifier.width(6.dp))
-                        if (state.tags.isEmpty()) {
-                            Text(
-                                text = "可选标签…",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                modifier = Modifier.weight(1f, fill = false),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "+",
-                                style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Normal),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        } else {
-                            Text(
-                                text = state.tags.joinToString(", "),
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "▾",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        Icon(
+                            if (tagsSelected) Icons.Filled.ArrowDropDown else Icons.Filled.Add,
+                            contentDescription = null,
+                            tint = tagContent,
+                            modifier = Modifier.padding(4.dp).size(18.dp),
+                        )
                     }
 
                     // 下拉选择菜单（根据分类动态调取 /tags/filter/search 返回的候选标签）
@@ -433,8 +400,7 @@ fun TopicCreatorSheet(
                         },
                         modifier = Modifier
                             .widthIn(min = 250.dp, max = 320.dp)
-                            .heightIn(max = 340.dp)
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                            .heightIn(max = 360.dp),
                     ) {
                         // 顶部必选标签组提示（如果有）
                         state.requiredTagGroupName?.let { groupName ->
@@ -442,27 +408,36 @@ fun TopicCreatorSheet(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 4.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
-                                    .padding(horizontal = 8.dp, vertical = 5.dp),
+                                    .clip(MaterialTheme.shapes.small)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
                             ) {
                                 Text(
                                     text = "要求至少选择 ${state.requiredTagMinCount} 个「$groupName」标签",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.5.sp),
-                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
                             }
                         }
 
-                        // 顶部搜索过滤输入框（对齐参考图）
-                        Box(
+                        // 顶部搜索过滤输入框
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
-                                .clip(RoundedCornerShape(8.dp))
+                                .height(40.dp)
+                                .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                                .padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            Icon(
+                                Icons.Filled.Search,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
                             BasicTextField(
                                 value = tagSearchQuery,
                                 onValueChange = { query ->
@@ -470,16 +445,16 @@ fun TopicCreatorSheet(
                                     onSearchTags(query)
                                 },
                                 singleLine = true,
-                                textStyle = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp),
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
                                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.weight(1f),
                                 decorationBox = { innerField ->
                                     Box {
                                         if (tagSearchQuery.isEmpty()) {
                                             Text(
-                                                text = "搜索…",
-                                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
-                                                color = MaterialTheme.colorScheme.outline,
+                                                text = "搜索标签",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
                                         innerField()
@@ -531,39 +506,29 @@ fun TopicCreatorSheet(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 modifier = Modifier.weight(1f, fill = false),
                                             ) {
-                                                // 浅灰背景标签徽章块，对齐参考图
-                                                Box(
-                                                    modifier = Modifier
-                                                        .clip(RoundedCornerShape(4.dp))
-                                                        .background(
-                                                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                                            else MaterialTheme.colorScheme.surfaceContainerHighest
-                                                        )
-                                                        .padding(horizontal = 7.dp, vertical = 3.dp),
-                                                ) {
-                                                    Text(
-                                                        text = tagItem.text.ifBlank { tagItem.name },
-                                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                                                            fontSize = 13.5.sp,
-                                                        ),
-                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                                    )
-                                                }
+                                                Text(
+                                                    text = tagItem.text.ifBlank { tagItem.name },
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f, fill = false),
+                                                )
                                                 if (tagItem.count > 0) {
-                                                    Spacer(Modifier.width(6.dp))
+                                                    Spacer(Modifier.width(8.dp))
                                                     Text(
-                                                        text = "x${tagItem.count}",
-                                                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                                        text = "×${tagItem.count}",
+                                                        style = MaterialTheme.typography.labelMedium,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     )
                                                 }
                                             }
                                             if (isSelected) {
-                                                Text(
-                                                    text = "✓",
-                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.primary,
+                                                Icon(
+                                                    Icons.Filled.Check,
+                                                    contentDescription = "已选",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(20.dp),
                                                 )
                                             }
                                         }
@@ -582,8 +547,11 @@ fun TopicCreatorSheet(
                                 text = {
                                     Text(
                                         text = "清空已选标签 (${state.tags.size})",
-                                        style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.error),
+                                        color = MaterialTheme.colorScheme.error,
                                     )
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Outlined.ClearAll, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                                 },
                                 onClick = { onTagsChange(emptyList()) },
                             )
@@ -604,11 +572,7 @@ fun TopicCreatorSheet(
                 BasicTextField(
                     value = state.title,
                     onValueChange = onTitleChange,
-                    textStyle = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    ),
+                    textStyle = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     maxLines = 2,
                     modifier = Modifier.weight(1f),
@@ -617,11 +581,8 @@ fun TopicCreatorSheet(
                             if (state.title.isEmpty()) {
                                 Text(
                                     text = "输入标题，或在此处粘贴链接",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Normal,
-                                    ),
-                                    color = MaterialTheme.colorScheme.outline,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             innerTextField()
@@ -632,7 +593,7 @@ fun TopicCreatorSheet(
                 val titleLen = state.title.length
                 Text(
                     text = "$titleLen / 6",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                    style = MaterialTheme.typography.labelMedium,
                     color = if (titleLen < 6) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -643,13 +604,20 @@ fun TopicCreatorSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                Icon(
+                    Icons.AutoMirrored.Outlined.Reply,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(
                     text = state.title.ifBlank { "回复话题 #${state.replyTopicId ?: ""}" },
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -686,25 +654,23 @@ fun TopicCreatorSheet(
 
             // 图片上传中悬浮提示卡片
             if (state.uploading) {
-                Box(
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f))
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
-                        .padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center,
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    shadowElevation = 3.dp,
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        LoadingIndicator(diameter = 16.dp)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "正在上传图片并插入正文…",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    Row(
+                        Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        LoadingIndicator(diameter = 18.dp, color = MaterialTheme.colorScheme.inversePrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text(text = "正在上传图片并插入正文…", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -712,85 +678,41 @@ fun TopicCreatorSheet(
 
         ListDivider()
 
-        // 底部工具栏：图片上传、文件上传、Emoji、快捷 Markdown、字数提示
+        // 底部工具栏:图片上传、文件上传、Emoji、快捷 Markdown、字数提示
         val canPickMedia = !state.uploading && !state.submitting && !state.savingDraft
+        val toolTint = MaterialTheme.colorScheme.onSurfaceVariant
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .padding(horizontal = 4.dp, vertical = 4.dp)
+                .padding(end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // 上传图片
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(enabled = canPickMedia) {
-                        imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                ComposerImageIcon(
-                    tint = if (canPickMedia) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
-                )
+            IconButton(
+                onClick = { imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                enabled = canPickMedia,
+            ) { ComposerImageIcon(tint = LocalContentColor.current) }
+
+            IconButton(onClick = { filePicker.launch(arrayOf("*/*")) }, enabled = canPickMedia) {
+                ComposerAttachmentIcon(tint = LocalContentColor.current)
             }
 
-            Spacer(Modifier.width(4.dp))
+            IconToggleButton(
+                checked = showEmojiPicker,
+                onCheckedChange = {
+                    if (it) keyboard?.hide()
+                    showEmojiPicker = it
+                },
+                enabled = canPickMedia,
+                colors = IconButtonDefaults.iconToggleButtonColors(
+                    contentColor = toolTint,
+                    checkedContentColor = MaterialTheme.colorScheme.primary,
+                ),
+            ) { ComposerEmojiIcon(tint = LocalContentColor.current) }
 
-            // 上传附件/文件
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(enabled = canPickMedia) {
-                        filePicker.launch(arrayOf("*/*"))
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                ComposerAttachmentIcon(
-                    tint = if (canPickMedia) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
-                )
-            }
-
-            Spacer(Modifier.width(4.dp))
-
-            // Emoji 面板开关
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        if (showEmojiPicker) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent,
-                    )
-                    .clickable(enabled = canPickMedia) {
-                        if (!showEmojiPicker) keyboard?.hide()
-                        showEmojiPicker = !showEmojiPicker
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                ComposerEmojiIcon(
-                    tint = if (showEmojiPicker) MaterialTheme.colorScheme.primary
-                    else if (canPickMedia) MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.outline,
-                )
-            }
-
-            Spacer(Modifier.width(4.dp))
-
-            // 粗体图标：与表情/图片/附件图标完全一致的 36.dp 规范与矢量绘制
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(enabled = canPickMedia) {
-                        appendTextToken("**粗体文字**")
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                ComposerBoldIcon(
-                    tint = if (canPickMedia) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
-                )
+            IconButton(onClick = { appendTextToken("**粗体文字**") }, enabled = canPickMedia) {
+                ComposerBoldIcon(tint = LocalContentColor.current)
             }
 
             Spacer(Modifier.weight(1f))
@@ -807,7 +729,7 @@ fun TopicCreatorSheet(
                 Text(
                     text = "${state.raw.length} 字",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -852,102 +774,30 @@ fun TopicCreatorSheet(
         )
     }
 
-    // 关闭二次确认对话框
-    // 关闭二次确认对话框（参考最新 UI：右上角关闭 X，居中标题与说明，垂直全宽胶囊按钮）
+    // 关闭二次确认:点对话框外继续编辑
     if (showCloseConfirmDialog) {
-        Dialog(onDismissRequest = { showCloseConfirmDialog = false }) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .padding(horizontal = 22.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                // 右上角关闭 ✕（点击关闭弹框，继续编辑）
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .clickable { showCloseConfirmDialog = false },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "✕",
-                            style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                Text(
-                    text = "保存草稿？",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold, fontSize = 22.sp),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                )
-
-                Spacer(Modifier.height(10.dp))
-
-                Text(
-                    text = "当前有未保存的内容，关闭前是否\n将其保存为草稿？",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 22.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-
-                Spacer(Modifier.height(24.dp))
-
-                // 蓝色胶囊主按钮：保存草稿并退出
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(MaterialTheme.colorScheme.primary)
-                        .clickable {
-                            showCloseConfirmDialog = false
-                            editorView?.exportToMarkdown()?.let { onRawChange(it) }
-                            onSaveDraft(true)
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "保存草稿并退出",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
-                        color = Color.White,
-                    )
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                // 浅红背景红字胶囊按钮：放弃更改
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.08f))
-                        .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f), RoundedCornerShape(50))
-                        .clickable {
-                            showCloseConfirmDialog = false
-                            onClose()
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "放弃更改",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-        }
+        AlertDialog(
+            onDismissRequest = { showCloseConfirmDialog = false },
+            icon = { Icon(Icons.Outlined.SaveAs, contentDescription = null) },
+            title = { Text("保存草稿？") },
+            text = { Text("当前有未保存的内容，关闭前是否将其保存为草稿？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showCloseConfirmDialog = false
+                    editorView?.exportToMarkdown()?.let { onRawChange(it) }
+                    onSaveDraft(true)
+                }) { Text("保存并退出") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showCloseConfirmDialog = false
+                        onClose()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text("放弃更改") }
+            },
+        )
     }
 
     previewingImage?.let { previewUrl ->
@@ -971,23 +821,23 @@ private fun CategoryPickerDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .heightIn(max = 560.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .clip(MaterialTheme.shapes.extraLarge)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .padding(vertical = 16.dp),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 4.dp),
+                    .padding(start = 24.dp, end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "选择话题分类",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
-                TextAction("关闭", color = MaterialTheme.colorScheme.onSurfaceVariant, onClick = onDismiss)
+                IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "关闭") }
             }
 
             Spacer(Modifier.height(8.dp))
@@ -1012,11 +862,11 @@ private fun CategoryPickerDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                if (isGroupSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+                                if (isGroupSelected) MaterialTheme.colorScheme.secondaryContainer
                                 else Color.Transparent,
                             )
                             .clickable { onSelect(parent.id.toInt()) }
-                            .padding(horizontal = 18.dp, vertical = 12.dp),
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1024,14 +874,14 @@ private fun CategoryPickerDialog(
                         ) {
                             Box(
                                 Modifier
-                                    .size(11.dp)
-                                    .clip(RoundedCornerShape(3.dp))
+                                    .size(10.dp)
+                                    .clip(CircleShape)
                                     .background(dotColor),
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(12.dp))
                             Text(
                                 text = baseName,
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
@@ -1047,28 +897,21 @@ private fun CategoryPickerDialog(
                                         val (pillBg, _, pillFg) = levelPillColors(lvl, AppTheme.isDark)
                                         Box(
                                             modifier = Modifier
-                                                .clip(RoundedCornerShape(6.dp))
+                                                .clip(MaterialTheme.shapes.small)
                                                 .background(if (isVariantSelected) MaterialTheme.colorScheme.primary else pillBg)
                                                 .clickable { onSelect(variant.id.toInt()) }
-                                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                                .padding(horizontal = 10.dp, vertical = 6.dp),
                                         ) {
                                             Text(
                                                 text = "Lv.$lvl",
-                                                style = MaterialTheme.typography.labelMedium.copy(
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                ),
-                                                color = if (isVariantSelected) Color.White else pillFg,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = if (isVariantSelected) MaterialTheme.colorScheme.onPrimary else pillFg,
                                             )
                                         }
                                     }
                                 }
                             } else if (selectedCategoryId == parent.id.toInt()) {
-                                Text(
-                                    text = "✓",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
+                                Icon(Icons.Filled.Check, contentDescription = "已选", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
 
@@ -1076,14 +919,13 @@ private fun CategoryPickerDialog(
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = parent.description,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
-                    ListDivider()
                 }
             }
         }
@@ -1110,9 +952,9 @@ private fun TagPickerDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .heightIn(max = 520.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .padding(20.dp),
+                .clip(MaterialTheme.shapes.extraLarge)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(24.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1121,22 +963,19 @@ private fun TagPickerDialog(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "选择标签",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = if (categoryName != null) "分类「$categoryName」可选固定标签" else "可选固定标签列表",
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextAction("关闭", color = MaterialTheme.colorScheme.onSurfaceVariant, onClick = onDismiss)
             }
 
-            Spacer(Modifier.height(14.dp))
-            ListDivider()
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
 
             if (availableTags.isEmpty()) {
                 Box(
@@ -1165,40 +1004,20 @@ private fun TagPickerDialog(
                     ) {
                         for (tag in availableTags) {
                             val isSelected = tag in workingTags
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(
-                                        if (isSelected) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    )
-                                    .clickable {
-                                        workingTags = if (isSelected) {
-                                            workingTags - tag
-                                        } else {
-                                            workingTags + tag
-                                        }
-                                    }
-                                    .padding(horizontal = 12.dp, vertical = 7.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = if (isSelected) "# $tag ✓" else "# $tag",
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = 13.sp,
-                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    ),
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { workingTags = if (isSelected) workingTags - tag else workingTags + tag },
+                                label = { Text(tag) },
+                                leadingIcon = if (isSelected) {
+                                    { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                                } else null,
+                            )
                         }
                     }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
-            ListDivider()
-            Spacer(Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1210,29 +1029,30 @@ private fun TagPickerDialog(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextAction("清空", color = MaterialTheme.colorScheme.onSurfaceVariant, onClick = { workingTags = emptySet() })
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .clickable {
-                                onConfirm(workingTags.toList())
-                            }
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "确定",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = Color.White,
-                        )
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = { workingTags = emptySet() }) { Text("清空") }
+                    TextButton(onClick = onDismiss) { Text("取消") }
+                    TextButton(onClick = { onConfirm(workingTags.toList()) }) { Text("确定") }
                 }
             }
         }
+    }
+}
+
+/** 编辑器顶部的错误 / 成功提示条。 */
+@Composable
+private fun ComposerBanner(text: String, icon: ImageVector, container: Color, content: Color) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(container)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = content, modifier = Modifier.weight(1f))
     }
 }

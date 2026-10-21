@@ -1,5 +1,21 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.VerticalAlignTop
+import androidx.compose.material.icons.outlined.DashboardCustomize
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.animation.core.LinearEasing
@@ -127,26 +143,14 @@ fun CategoryListScreen(
     }
 
     var showMenu by remember { mutableStateOf(false) }
-    val dotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
 
     val combinedTrailing: @Composable () -> Unit = {
         Row(verticalAlignment = Alignment.CenterVertically) {
             trailing()
             Spacer(Modifier.width(6.dp))
             Box {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .clickable { showMenu = true },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Canvas(Modifier.size(16.dp)) {
-                        val r = 2.dp.toPx()
-                        drawCircle(dotColor, r, Offset(size.width * 0.2f, size.height * 0.5f))
-                        drawCircle(dotColor, r, Offset(size.width * 0.5f, size.height * 0.5f))
-                        drawCircle(dotColor, r, Offset(size.width * 0.8f, size.height * 0.5f))
-                    }
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "更多")
                 }
                 DropdownMenu(
                     expanded = showMenu,
@@ -154,6 +158,7 @@ fun CategoryListScreen(
                 ) {
                     DropdownMenuItem(
                         text = { Text(if (customSection == null) "添加自定义版块" else "编辑自定义版块") },
+                        leadingIcon = { Icon(Icons.Outlined.DashboardCustomize, contentDescription = null) },
                         onClick = {
                             showMenu = false
                             showCustomSectionDialog = true
@@ -161,6 +166,7 @@ fun CategoryListScreen(
                     )
                     DropdownMenuItem(
                         text = { Text("恢复默认分类顺序") },
+                        leadingIcon = { Icon(Icons.Outlined.RestartAlt, contentDescription = null) },
                         onClick = {
                             showMenu = false
                             onResetOrder()
@@ -317,13 +323,32 @@ fun CategoryListScreen(
                     ListRow(
                         onClick = { if (draggedId == null) onOpen(parent) },
                     ) {
-                        Column(Modifier.weight(1f).padding(top = 5.dp, bottom = 5.dp, end = 8.dp)) {
-                            CategoryTag(parent, prominent = true)
+                        val tint = parseCategoryColor(parent.color) ?: MaterialTheme.colorScheme.primary
+                        Box(
+                            Modifier
+                                .size(40.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .background(tint.copy(alpha = 0.16f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                categoryBaseNameOf(parent.name).take(1),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = tint,
+                            )
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column(Modifier.weight(1f).padding(vertical = 4.dp)) {
+                            Text(
+                                categoryBaseNameOf(parent.name),
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                             Text(
                                 text = "${parent.topicCount} 个话题",
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 5.dp),
                             )
                         }
                         if (levels.isNotEmpty()) {
@@ -341,9 +366,12 @@ fun CategoryListScreen(
                                 }
                             }
                         }
-                        Box(Modifier.size(32.dp).semantics { contentDescription = "调整分类顺序" }
-                            .clickable { showCardMenu = true }, contentAlignment = Alignment.Center) {
-                            Text("≡", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        IconButton(onClick = { showCardMenu = true }) {
+                            Icon(
+                                Icons.Filled.DragHandle,
+                                contentDescription = "调整分类顺序",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
 
@@ -355,6 +383,7 @@ fun CategoryListScreen(
                             if (index > 0) {
                                 DropdownMenuItem(
                                     text = { Text("置顶") },
+                                    leadingIcon = { Icon(Icons.Filled.VerticalAlignTop, contentDescription = null) },
                                     onClick = {
                                         showCardMenu = false
                                         moveItem(index, 0)
@@ -362,6 +391,7 @@ fun CategoryListScreen(
                                 )
                                 DropdownMenuItem(
                                     text = { Text("上移") },
+                                    leadingIcon = { Icon(Icons.Filled.ArrowUpward, contentDescription = null) },
                                     onClick = {
                                         showCardMenu = false
                                         moveItem(index, index - 1)
@@ -371,6 +401,7 @@ fun CategoryListScreen(
                             if (index < groups.lastIndex) {
                                 DropdownMenuItem(
                                     text = { Text("下移") },
+                                    leadingIcon = { Icon(Icons.Filled.ArrowDownward, contentDescription = null) },
                                     onClick = {
                                         showCardMenu = false
                                         moveItem(index, index + 1)
@@ -576,13 +607,7 @@ private fun CustomSectionLinkRow(
                 fontWeight = FontWeight.Medium,
             )
         }
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = "›",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.outline,
-            fontSize = 17.sp,
-        )
+
     }
 }
 
@@ -678,8 +703,8 @@ private fun CustomSectionDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 24.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                .clip(MaterialTheme.shapes.extraLarge)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         ) {
             Column(
                 modifier = Modifier
@@ -699,16 +724,7 @@ private fun CustomSectionDialog(
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                            .clickable(onClick = onDismiss),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("✕", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "关闭") }
                 }
 
                 Spacer(Modifier.height(14.dp))
@@ -720,32 +736,14 @@ private fun CustomSectionDialog(
                         .verticalScroll(rememberScrollState()),
                 ) {
                     // 版块标题
-                    Text(
-                        text = "版块标题",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("版块标题") },
+                        placeholder = { Text("如：我的常逛") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(Modifier.height(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                    ) {
-                        if (title.isEmpty()) {
-                            Text("输入版块标题，如：我的常逛", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-                        }
-                        BasicTextField(
-                            value = title,
-                            onValueChange = { title = it },
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                        )
-                    }
 
                     Spacer(Modifier.height(16.dp))
 
@@ -795,23 +793,13 @@ private fun CustomSectionDialog(
                     }
 
                     // + 添加另一个链接
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
-                            .clickable {
-                                links.add(CustomSectionLink(icon = "🔗", name = "", url = ""))
-                            }
-                            .padding(vertical = 11.dp),
-                        contentAlignment = Alignment.Center,
+                    OutlinedButton(
+                        onClick = { links.add(CustomSectionLink(icon = "🔗", name = "", url = "")) },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(
-                            text = "＋ 添加另一个链接",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+                        Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("添加链接")
                     }
 
                     Spacer(Modifier.height(16.dp))
@@ -828,47 +816,23 @@ private fun CustomSectionDialog(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     if (initialSection != null && onDelete != null) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f))
-                                .clickable(onClick = onDelete)
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "删除版块",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
+                        TextButton(
+                            onClick = onDelete,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        ) { Text("删除版块") }
                     }
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .clickable {
-                                val validLinks = links.filter { it.name.isNotBlank() || it.url.isNotBlank() }
-                                onSave(
-                                    CustomSection(
-                                        id = initialSection?.id ?: "custom_section_default",
-                                        title = title.ifBlank { "自定义版块" },
-                                        links = validLinks,
-                                    ),
-                                )
-                            }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "保 存",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = onDismiss) { Text("取消") }
+                    Button(onClick = {
+                        val validLinks = links.filter { it.name.isNotBlank() || it.url.isNotBlank() }
+                        onSave(
+                            CustomSection(
+                                id = initialSection?.id ?: "custom_section_default",
+                                title = title.ifBlank { "自定义版块" },
+                                links = validLinks,
+                            ),
                         )
-                    }
+                    }) { Text("保存") }
                 }
             }
         }
@@ -1189,8 +1153,8 @@ private fun CategoryPickerSubDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 24.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                .clip(MaterialTheme.shapes.extraLarge)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         ) {
             Column(
                 modifier = Modifier
@@ -1209,14 +1173,7 @@ private fun CategoryPickerSubDialog(
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
-                    Text(
-                        text = "✕",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .clickable(onClick = onDismiss)
-                            .padding(4.dp),
-                    )
+                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "关闭") }
                 }
                 Spacer(Modifier.height(12.dp))
                 Column(

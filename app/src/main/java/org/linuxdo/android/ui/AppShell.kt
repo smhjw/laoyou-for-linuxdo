@@ -1,5 +1,10 @@
 package org.linuxdo.android.ui
 
+import org.linuxdo.android.R
+import androidx.core.graphics.ColorUtils
+import androidx.compose.ui.graphics.toArgb
+import android.widget.ImageView
+import android.content.res.ColorStateList
 import org.linuxdo.android.ui.design.*
 import androidx.compose.material3.MaterialTheme
 
@@ -222,14 +227,17 @@ private fun NativeWebLoginDialog(
     dark: Boolean,
 ) {
     val context = LocalContext.current
-    DisposableEffect(browser, context, dark) {
+    // WebView 必须挂在 View 体系的 Dialog 里;颜色取自当前 Material 主题,外观与 ModalBottomSheet 一致。
+    val scheme = MaterialTheme.colorScheme
+    val surfaceColor = scheme.surfaceContainerLow.toArgb()
+    val labelColor = scheme.onSurface.toArgb()
+    val secondaryColor = scheme.onSurfaceVariant.toArgb()
+    val dividerColor = scheme.outlineVariant.toArgb()
+    val accentColor = scheme.primary.toArgb()
+    DisposableEffect(browser, context, dark, surfaceColor) {
         val density = context.resources.displayMetrics.density
         fun dp(value: Int) = (value * density).toInt()
 
-        val surfaceColor = if (dark) AndroidColor.rgb(28, 28, 30) else AndroidColor.WHITE
-        val labelColor = if (dark) AndroidColor.rgb(245, 245, 247) else AndroidColor.rgb(28, 28, 30)
-        val secondaryColor = if (dark) AndroidColor.rgb(142, 142, 147) else AndroidColor.rgb(142, 142, 147)
-        val dividerColor = if (dark) AndroidColor.rgb(56, 56, 58) else AndroidColor.rgb(229, 229, 234)
         val dialog = Dialog(context)
         var dismissedByComposition = false
 
@@ -238,46 +246,52 @@ private fun NativeWebLoginDialog(
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 setColor(surfaceColor)
-                cornerRadii = floatArrayOf(
-                    dp(20).toFloat(), dp(20).toFloat(),
-                    dp(20).toFloat(), dp(20).toFloat(),
-                    0f, 0f, 0f, 0f,
-                )
+                val r = dp(28).toFloat()
+                cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
             }
         }
+        // 拖动条只是视觉提示,和 Material 底部弹窗保持一致
+        val handle = View(context).apply {
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(2).toFloat()
+                setColor(ColorUtils.setAlphaComponent(secondaryColor, 0x66))
+            }
+        }
+        root.addView(handle, LinearLayout.LayoutParams(dp(32), dp(4)).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+            topMargin = dp(16)
+        })
         val header = LinearLayout(context).apply {
             gravity = Gravity.CENTER_VERTICAL
             orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(16), 0, dp(16), 0)
+            setPadding(dp(24), 0, dp(12), 0)
         }
-        val icon = AndroidTextView(context).apply {
-            text = "🛡️"
-            gravity = Gravity.CENTER_VERTICAL
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+        val icon = ImageView(context).apply {
+            setImageResource(R.drawable.ic_verified_user_24)
+            imageTintList = ColorStateList.valueOf(accentColor)
         }
         val title = AndroidTextView(context).apply {
             text = "完成人机验证"
             gravity = Gravity.CENTER_VERTICAL
             setTextColor(labelColor)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setPadding(dp(8), 0, 0, 0)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+            setPadding(dp(16), 0, 0, 0)
         }
-        val close = AndroidTextView(context).apply {
-            text = "✕"
-            gravity = Gravity.CENTER
-            setTextColor(secondaryColor)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(if (dark) AndroidColor.rgb(44, 44, 46) else AndroidColor.rgb(242, 242, 247))
-            }
+        val close = ImageView(context).apply {
+            setImageResource(R.drawable.ic_close_24)
+            imageTintList = ColorStateList.valueOf(secondaryColor)
+            scaleType = ImageView.ScaleType.CENTER
+            contentDescription = "关闭"
+            val ripple = TypedValue()
+            context.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
+            setBackgroundResource(ripple.resourceId)
             setOnClickListener { dialog.dismiss() }
         }
-        header.addView(icon, LinearLayout.LayoutParams(dp(32), ViewGroup.LayoutParams.MATCH_PARENT))
+        header.addView(icon, LinearLayout.LayoutParams(dp(24), dp(24)))
         header.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
-        header.addView(close, LinearLayout.LayoutParams(dp(30), dp(30)))
-        root.addView(header, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(54)))
+        header.addView(close, LinearLayout.LayoutParams(dp(48), dp(48)))
+        root.addView(header, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64)))
         root.addView(View(context).apply { setBackgroundColor(dividerColor) }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1))
 
         val webView = browser.attachAuth(context)

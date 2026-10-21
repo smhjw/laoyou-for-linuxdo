@@ -1,5 +1,20 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Reply
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.SolidColor
 import org.linuxdo.android.ui.design.*
 import androidx.compose.material3.MaterialTheme
 
@@ -89,6 +104,7 @@ fun DraftsScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp),
             ) {
                 if (state.loading && !state.loaded) {
                     item("loading") { LoadingBox() }
@@ -101,28 +117,7 @@ fun DraftsScreen(
                 }
 
                 if (state.loaded && state.items.isEmpty() && state.error == null) {
-                    item("empty") {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(top = 72.dp, bottom = 32.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "暂无保存的草稿",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    text = "在发帖界面点击“保存”即可将草稿存放在这里",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.outline,
-                                )
-                            }
-                        }
-                    }
+                    item("empty") { DraftsEmpty() }
                 }
 
                 items(state.items, key = { it.draftKey }) { draft ->
@@ -136,40 +131,51 @@ fun DraftsScreen(
                         onDelete = { draftPendingDelete = draft },
                     )
                 }
-
-                item("bottom-spacer") {
-                    Spacer(Modifier.height(28.dp))
-                }
             }
         }
     }
 
     draftPendingDelete?.let { target ->
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { draftPendingDelete = null },
-            title = { Text("删除草稿") },
-            text = {
-                val displayTitle = target.title.ifBlank { "无标题草稿" }
-                Text("确认要删除草稿「$displayTitle」吗？删除后无法恢复。")
+        val displayTitle = target.title.ifBlank { "无标题草稿" }
+        ConfirmDialog(
+            title = "删除草稿",
+            text = "确认要删除草稿「$displayTitle」吗？删除后无法恢复。",
+            icon = Icons.Outlined.Delete,
+            confirmText = "删除",
+            destructive = true,
+            onDismiss = { draftPendingDelete = null },
+            onConfirm = {
+                draftPendingDelete = null
+                onDeleteDraft(target)
             },
-            confirmButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = {
-                        val toDelete = target
-                        draftPendingDelete = null
-                        onDeleteDraft(toDelete)
-                    },
-                ) {
-                    Text("删除", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = { draftPendingDelete = null },
-                ) {
-                    Text("取消")
-                }
-            },
+        )
+    }
+}
+
+@Composable
+private fun DraftsEmpty() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp, vertical = 72.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(
+            Icons.Outlined.EditNote,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.size(56.dp),
+        )
+        Text(
+            text = "暂无保存的草稿",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "在发帖界面点击“保存”即可将草稿存放在这里",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -202,42 +208,41 @@ private fun DraftCard(
         RelativeTime.format(draft.createdAt)
     }
 
-    Box(
+    OutlinedCard(
+        onClick = onEdit,
+        enabled = !isDeleting,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 6.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), RoundedCornerShape(14.dp))
-            .clickable(enabled = !isDeleting, onClick = onEdit)
-            .padding(14.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        border = CardDefaults.outlinedCardBorder().copy(
+            brush = SolidColor(MaterialTheme.colorScheme.outlineVariant),
+        ),
     ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-            ) {
+        Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
                 if (avatarUrl != null) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = draft.username,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(avatarShape(draft.username, avatarUrl, 10.dp)),
-                        contentScale = ContentScale.Crop,
+                    UserAvatar(
+                        avatarUrl = avatarUrl,
+                        username = draft.username,
+                        cornerRadius = 10.dp,
+                        modifier = Modifier.size(40.dp),
                     )
                 } else {
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = draft.username?.firstOrNull()?.uppercase() ?: "草",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
                 }
@@ -245,107 +250,60 @@ private fun DraftCard(
                 Spacer(Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+                    Text(
+                        text = displayTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (timeText.isNotBlank()) {
                         Text(
-                            text = displayTitle,
-                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
+                            text = timeText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        if (timeText.isNotBlank()) {
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = timeText,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
                     }
+                }
+            }
 
-                    Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(10.dp))
 
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        if (draft.action != "createTopic") {
-                            Box(
-                                Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = if (draft.replyToPostNumber != null) "回复 #${draft.replyToPostNumber}" else "回复草稿",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        } else if (category != null) {
-                            val baseName = categoryBaseNameOf(category.name)
-                            val level = categoryLevelOf(category)
-                            val dotColor = parseCategoryColor(category.color) ?: MaterialTheme.colorScheme.primary
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(vertical = 1.dp),
-                            ) {
-                                Box(
-                                    Modifier
-                                        .size(9.dp)
-                                        .clip(RoundedCornerShape(2.5.dp))
-                                        .background(dotColor),
-                                )
-                                Spacer(Modifier.width(5.dp))
-                                Text(
-                                    text = baseName,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                if (level > 0) {
-                                    Spacer(Modifier.width(5.dp))
-                                    val (pillBg, _, pillFg) = levelPillColors(level, AppTheme.isDark)
-                                    Box(
-                                        Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(pillBg)
-                                            .padding(horizontal = 5.dp, vertical = 1.dp),
-                                    ) {
-                                        Text(
-                                            text = "Lv.$level",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                                            color = pillFg,
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            Text(
-                                text = "未选择分类",
-                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
-                                color = MaterialTheme.colorScheme.outline,
-                            )
-                        }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (draft.action != "createTopic") {
+                    DraftLabel(
+                        text = if (draft.replyToPostNumber != null) "回复 #${draft.replyToPostNumber}" else "回复草稿",
+                        container = MaterialTheme.colorScheme.secondaryContainer,
+                        content = MaterialTheme.colorScheme.onSecondaryContainer,
+                        leading = { Icon(Icons.AutoMirrored.Outlined.Reply, null, Modifier.size(14.dp)) },
+                    )
+                } else if (category != null) {
+                    val dotColor = parseCategoryColor(category.color) ?: MaterialTheme.colorScheme.primary
+                    DraftLabel(
+                        text = categoryBaseNameOf(category.name),
+                        container = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        content = MaterialTheme.colorScheme.onSurfaceVariant,
+                        leading = { Box(Modifier.size(8.dp).clip(CircleShape).background(dotColor)) },
+                    )
+                    val level = categoryLevelOf(category)
+                    if (level > 0) LevelPill(level)
+                } else {
+                    DraftLabel(
+                        text = "未选择分类",
+                        container = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        content = MaterialTheme.colorScheme.outline,
+                    )
+                }
 
-                        draft.tags.forEach { tag ->
-                            Box(
-                                Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = tag,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
+                draft.tags.forEach { tag ->
+                    DraftLabel(
+                        text = "# $tag",
+                        container = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        content = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
@@ -353,48 +311,57 @@ private fun DraftCard(
                 Spacer(Modifier.height(10.dp))
                 Text(
                     text = summaryText,
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
 
-            Spacer(Modifier.height(10.dp))
-
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                        .clickable(enabled = !isDeleting, onClick = onEdit),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    PostActionIcon(PostAction.Edit, selected = false, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-
-                Spacer(Modifier.width(10.dp))
-
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f))
-                        .clickable(enabled = !isDeleting, onClick = onDelete),
-                    contentAlignment = Alignment.Center,
+                TextButton(
+                    onClick = onDelete,
+                    enabled = !isDeleting,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
                     if (isDeleting) {
-                        LoadingIndicator(diameter = 14.dp, color = MaterialTheme.colorScheme.error)
+                        LoadingIndicator(diameter = 16.dp, color = MaterialTheme.colorScheme.error)
                     } else {
-                        PostActionIcon(PostAction.Delete, selected = false, tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                     }
+                    Spacer(Modifier.width(6.dp))
+                    Text("删除")
+                }
+                FilledTonalButton(onClick = onEdit, enabled = !isDeleting) {
+                    Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("继续编辑")
                 }
             }
+        }
+    }
+}
+
+/** 草稿卡里的小标签:分类、回复目标与话题标签共用一种外观。 */
+@Composable
+private fun DraftLabel(
+    text: String,
+    container: Color,
+    content: Color,
+    leading: (@Composable () -> Unit)? = null,
+) {
+    Surface(shape = MaterialTheme.shapes.small, color = container, contentColor = content) {
+        Row(
+            Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            leading?.invoke()
+            Text(text, style = MaterialTheme.typography.labelMedium)
         }
     }
 }

@@ -39,7 +39,7 @@ data class NavEntry(val id: Long, val route: Route) : Serializable
 
 /**
  * 极简导航栈。没有用 navigation-compose:第一期无深链需求,
- * 而 iOS 边缘滑动返回要求上一页跟随手指位移,自己持有栈才好做这个联动。
+ * 而预测性返回手势要求上一页随手势进度做共享轴过渡,自己持有栈才好做这个联动。
  */
 class NavStack(root: Route) {
     private var nextId = 1L

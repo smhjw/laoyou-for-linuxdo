@@ -1,55 +1,70 @@
 package org.linuxdo.android.ui.screen
 
-import androidx.compose.material3.MaterialTheme
-
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.Sort
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.ThumbUp
+import androidx.compose.material.icons.outlined.TrackChanges
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import org.linuxdo.android.data.Topic
-import org.linuxdo.android.data.TopicListItem
 import org.linuxdo.android.data.SearchOrder
+import org.linuxdo.android.data.Topic
 import org.linuxdo.android.ui.SearchUiState
-import org.linuxdo.android.ui.design.*
+import org.linuxdo.android.ui.design.AppTopBar
+import org.linuxdo.android.ui.design.LoadingBox
+import org.linuxdo.android.ui.design.ScrollToTopOnRequest
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     state: SearchUiState,
@@ -64,9 +79,7 @@ fun SearchScreen(
     val list = rememberLazyListState()
     ScrollToTopOnRequest(list, scrollToTopRequest)
     val focusManager = LocalFocusManager.current
-    var focused by remember { mutableStateOf(false) }
     var showSort by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
 
     val nearEnd by remember { derivedStateOf {
         (list.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1) >= list.layoutInfo.totalItemsCount - 3
@@ -86,129 +99,66 @@ fun SearchScreen(
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-        // 顶部大标题栏
         AppTopBar(title = "搜索", trailing = { trailing() })
 
-        // 搜索输入栏 (胶囊式圆角矩形 + 放大镜 Icon + 右侧取消)
+        // Material 3 搜索框:整条胶囊,左放大镜、右清除。
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp),
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .height(56.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(start = 16.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                    .padding(horizontal = 12.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                SearchLoupeIcon(
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                BasicTextField(
-                    value = state.query,
-                    onValueChange = onQuery,
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                    modifier = Modifier
-                        .weight(1f)
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { focused = it.isFocused },
-                    decorationBox = { field ->
-                        Box {
-                            if (state.query.isEmpty()) {
-                                Text(
-                                    "输入关键词查找话题",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            field()
-                        }
-                    },
-                )
-                if (state.query.isNotEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-                            .clickable { onQuery("") },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("✕", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Filled.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(16.dp))
+            BasicTextField(
+                value = state.query,
+                onValueChange = onQuery,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                modifier = Modifier.weight(1f),
+                decorationBox = { field ->
+                    if (state.query.isEmpty()) {
+                        Text("搜索话题", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    field()
+                },
+            )
+            if (state.query.isNotEmpty()) {
+                IconButton(onClick = { onQuery(""); focusManager.clearFocus() }) {
+                    Icon(Icons.Filled.Close, contentDescription = "清除", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Text(
-                text = "取消",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .clickable {
-                        onQuery("")
-                        focusManager.clearFocus()
-                    }
-                    .padding(start = 12.dp, top = 6.dp, bottom = 6.dp),
-            )
         }
 
-        // 筛选标签栏 (横向滚动胶囊，第一项为当前排序)
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 6.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                text = "排序依据",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            AssistChip(
+                onClick = {
+                    focusManager.clearFocus()
+                    showSort = true
+                },
+                label = { Text("排序：${state.order.label}") },
+                leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = null, modifier = Modifier.padding(0.dp)) },
+                trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.padding(0.dp)) },
+                colors = AssistChipDefaults.assistChipColors(
+                    leadingIconContentColor = MaterialTheme.colorScheme.primary,
+                ),
             )
-            // 当前排序胶囊 (高亮浅蓝底 + 蓝色文字与箭头)
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                    .clickable {
-                        focusManager.clearFocus()
-                        showSort = true
-                    }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = state.order.label,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = "⌄",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
         }
 
-        Spacer(Modifier.height(4.dp))
-
-        // 搜索结果卡片列表
         LazyColumn(
             state = list,
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(vertical = 4.dp),
+            contentPadding = PaddingValues(top = 4.dp, bottom = 16.dp),
         ) {
             if (state.results.initialLoading) item("loading") { LoadingBox() }
             state.results.error?.let { message ->
@@ -217,281 +167,61 @@ fun SearchScreen(
             if (state.query.isNotBlank() && !state.results.initialLoading && state.results.error == null && state.results.items.isEmpty()) {
                 item("empty") { EmptyNotice() }
             }
-            itemsIndexed(state.results.items, key = { _, item -> item.topic.id }) { index, item ->
-                Column(Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)) {
-                    val topicWithExcerpt = remember(item, state.excerpts[item.topic.id]) {
-                        if (state.excerpts[item.topic.id] != null) {
-                            item.copy(topic = item.topic.copy(excerpt = state.excerpts[item.topic.id]))
-                        } else item
-                    }
-                    TopicRow(
-                        item = topicWithExcerpt,
-                        query = state.query,
-                        onClick = {
-                            focusManager.clearFocus()
-                            onOpenTopic(item.topic)
-                        },
-                    )
-                    if (index < state.results.items.lastIndex) {
-                        ListDivider(startIndent = Dimens.screenPadding)
-                    }
+            items(state.results.items, key = { it.topic.id }) { item ->
+                val excerpt = state.excerpts[item.topic.id]
+                val withExcerpt = remember(item, excerpt) {
+                    if (excerpt != null) item.copy(topic = item.topic.copy(excerpt = excerpt)) else item
                 }
+                TopicRow(
+                    item = withExcerpt,
+                    query = state.query,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onOpenTopic(item.topic)
+                    },
+                )
             }
             if (state.results.loadingMore) item("more") { LoadingBox() }
         }
     }
 
-    // 底部“搜索排序”抽屉 (BottomSheet 样式)
     if (showSort) {
-        Dialog(
-            onDismissRequest = { showSort = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .imePadding(),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                // 半透明背景遮罩
-                Box(
+        ModalBottomSheet(onDismissRequest = { showSort = false }) {
+            Text(
+                "搜索排序",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            SearchOrder.entries.forEach { order ->
+                val selected = state.order == order
+                ListItem(
+                    headlineContent = { Text(order.label) },
+                    leadingContent = { Icon(searchOrderIcon(order), contentDescription = null) },
+                    trailingContent = if (selected) {
+                        { Icon(Icons.Filled.Check, contentDescription = "已选", tint = MaterialTheme.colorScheme.primary) }
+                    } else null,
+                    colors = ListItemDefaults.colors(
+                        containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                    ),
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.45f))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { showSort = false },
-                        ),
+                        .padding(horizontal = 12.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .clickable {
+                            onOrder(order)
+                            showSort = false
+                        },
                 )
-
-                // 抽屉面板
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = {},
-                        )
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    // 顶部灰色横条把手
-                    Box(
-                        modifier = Modifier
-                            .size(width = 36.dp, height = 4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(MaterialTheme.colorScheme.outlineVariant),
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    // 抽屉头部标题与关闭按钮
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "搜索排序",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                .clickable { showSort = false },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text("✕", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // 排序选项列表
-                    SearchOrder.entries.forEach { order ->
-                        val isSelected = state.order == order
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                    else Color.Transparent,
-                                )
-                                .clickable {
-                                    onOrder(order)
-                                    showSort = false
-                                }
-                                .padding(horizontal = 12.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            SearchOrderIcon(order, isSelected)
-                            Spacer(Modifier.width(12.dp))
-                            Text(
-                                text = order.label,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            if (isSelected) {
-                                Text(
-                                    text = "✓",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp,
-                                )
-                            }
-                        }
-                        if (order != SearchOrder.entries.last()) {
-                            ListDivider(modifier = Modifier.padding(horizontal = 8.dp))
-                        }
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // 底部取消按钮
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { showSort = false }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "取消",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
             }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
-
-/** 搜索放大镜图标 */
-@Composable
-private fun SearchLoupeIcon(tint: Color, modifier: Modifier = Modifier) {
-    Canvas(modifier) {
-        scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-            val stroke = Stroke(width = 2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-            drawCircle(tint, radius = 6.5f, center = Offset(10.5f, 10.5f), style = stroke)
-            drawLine(tint, Offset(15.5f, 15.5f), Offset(21f, 21f), strokeWidth = 2.2f, cap = StrokeCap.Round)
-        }
-    }
+private fun searchOrderIcon(order: SearchOrder): ImageVector = when (order) {
+    SearchOrder.Relevance -> Icons.Outlined.TrackChanges
+    SearchOrder.Latest -> Icons.Outlined.Schedule
+    SearchOrder.Likes -> Icons.Outlined.ThumbUp
+    SearchOrder.Views -> Icons.Outlined.Visibility
+    SearchOrder.LatestTopic -> Icons.Outlined.ChatBubbleOutline
+    SearchOrder.Read -> Icons.AutoMirrored.Outlined.MenuBook
 }
-
-/** 排序抽屉中各选项的专属贴吧/社区风格图标 */
-@Composable
-private fun SearchOrderIcon(order: SearchOrder, isSelected: Boolean) {
-    val tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-    Box(
-        modifier = Modifier.size(24.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(Modifier.size(20.dp)) {
-            scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-                val stroke = Stroke(width = 1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                when (order) {
-                    SearchOrder.Relevance -> {
-                        // 爱心图标 (选中时实心蓝底微心，或心形)
-                        if (isSelected) {
-                            drawCircle(tint, radius = 10f, center = Offset(12f, 12f))
-                            val heart = Path().apply {
-                                moveTo(12f, 16.5f)
-                                cubicTo(10.5f, 15f, 6f, 11f, 6f, 8f)
-                                cubicTo(6f, 5.5f, 10f, 4.5f, 12f, 8f)
-                                cubicTo(14f, 4.5f, 18f, 5.5f, 18f, 8f)
-                                cubicTo(18f, 11f, 13.5f, 15f, 12f, 16.5f)
-                                close()
-                            }
-                            drawPath(heart, Color.White)
-                        } else {
-                            val heart = Path().apply {
-                                moveTo(12f, 19f)
-                                cubicTo(10f, 17f, 4f, 12f, 4f, 7.5f)
-                                cubicTo(4f, 4.5f, 9.5f, 3.5f, 12f, 8f)
-                                cubicTo(14.5f, 3.5f, 20f, 4.5f, 20f, 7.5f)
-                                cubicTo(20f, 12f, 14f, 17f, 12f, 19f)
-                                close()
-                            }
-                            drawPath(heart, tint, style = stroke)
-                        }
-                    }
-                    SearchOrder.Latest -> {
-                        // 时钟图标 🕒
-                        drawCircle(tint, radius = 9f, center = Offset(12f, 12f), style = stroke)
-                        drawLine(tint, Offset(12f, 12f), Offset(12f, 6.5f), strokeWidth = 1.8f, cap = StrokeCap.Round)
-                        drawLine(tint, Offset(12f, 12f), Offset(16.5f, 12f), strokeWidth = 1.8f, cap = StrokeCap.Round)
-                    }
-                    SearchOrder.Likes -> {
-                        // 点赞大拇指 👍
-                        val thumb = Path().apply {
-                            moveTo(7f, 19f); lineTo(3f, 19f); lineTo(3f, 10f); lineTo(7f, 10f)
-                            moveTo(7f, 11f); lineTo(10.5f, 4f); cubicTo(12f, 4f, 13f, 5.5f, 12.5f, 7.5f)
-                            lineTo(11.5f, 10f); lineTo(18.5f, 10f); cubicTo(20f, 10f, 21f, 11.5f, 20f, 13f)
-                            lineTo(18.5f, 18f); cubicTo(18f, 19f, 17f, 19f, 16f, 19f); lineTo(7f, 19f)
-                        }
-                        drawPath(thumb, tint, style = stroke)
-                    }
-                    SearchOrder.Views -> {
-                        // 眼睛浏览 👁
-                        val eye = Path().apply {
-                            moveTo(3f, 12f)
-                            cubicTo(6.5f, 6.5f, 17.5f, 6.5f, 21f, 12f)
-                            cubicTo(17.5f, 17.5f, 6.5f, 17.5f, 3f, 12f)
-                            close()
-                        }
-                        drawPath(eye, tint, style = stroke)
-                        drawCircle(tint, radius = 2.8f, center = Offset(12f, 12f))
-                    }
-                    SearchOrder.LatestTopic -> {
-                        // 对话气泡 💬
-                        val bubble = Path().apply {
-                            moveTo(4f, 6f)
-                            lineTo(20f, 6f)
-                            cubicTo(21f, 6f, 21.5f, 7f, 21.5f, 8f)
-                            lineTo(21.5f, 15f)
-                            cubicTo(21.5f, 16f, 21f, 17f, 20f, 17f)
-                            lineTo(9f, 17f)
-                            lineTo(5f, 20.5f)
-                            lineTo(5f, 17f)
-                            lineTo(4f, 17f)
-                            cubicTo(3f, 17f, 2.5f, 16f, 2.5f, 15f)
-                            lineTo(2.5f, 8f)
-                            cubicTo(2.5f, 7f, 3f, 6f, 4f, 6f)
-                            close()
-                        }
-                        drawPath(bubble, tint, style = stroke)
-                    }
-                    SearchOrder.Read -> {
-                        // 打开的书本 📖
-                        val book = Path().apply {
-                            moveTo(12f, 6f)
-                            cubicTo(9f, 4.5f, 4f, 5f, 3f, 6f); lineTo(3f, 18f)
-                            cubicTo(4f, 17f, 9f, 16.5f, 12f, 18f)
-                            cubicTo(15f, 16.5f, 20f, 17f, 21f, 18f); lineTo(21f, 6f)
-                            cubicTo(20f, 5f, 15f, 4.5f, 12f, 6f)
-                        }
-                        drawPath(book, tint, style = stroke)
-                        drawLine(tint, Offset(12f, 6f), Offset(12f, 18f), strokeWidth = 1.8f)
-                    }
-                }
-            }
-        }
-    }
-}
-

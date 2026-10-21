@@ -1,5 +1,11 @@
 package org.linuxdo.android.ui
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import org.linuxdo.android.ui.design.*
 import androidx.compose.material3.MaterialTheme
 
@@ -35,24 +41,15 @@ import androidx.compose.ui.geometry.Size
 
 @Composable
 fun UnreadBell(count: Int, onClick: () -> Unit) {
-    val iconColor = MaterialTheme.colorScheme.onSurfaceVariant
-    Box(Modifier.size(44.dp).semantics { contentDescription = "通知，${count}条回复或私信未读" }
-        .clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(22.dp)) {
-            scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-                val bell = Path().apply {
-                    moveTo(5f, 17f); lineTo(7f, 14f); lineTo(7f, 9f)
-                    cubicTo(7f, 2f, 17f, 2f, 17f, 9f)
-                    lineTo(17f, 14f); lineTo(19f, 17f); close()
-                }
-                drawPath(bell, iconColor, style = Stroke(1.7f))
-                drawArc(iconColor, 0f, 180f, false, Offset(10f, 18f), androidx.compose.ui.geometry.Size(4f, 3f), style = Stroke(1.7f))
-            }
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.semantics { contentDescription = "通知，" + count + "条回复或私信未读" },
+    ) {
+        BadgedBox(badge = {
+            if (count > 0) Badge { Text(if (count > 99) "99+" else count.toString()) }
+        }) {
+            Icon(Icons.Outlined.Notifications, contentDescription = null)
         }
-        if (count > 0) Text(if (count > 99) "99+" else count.toString(), color = Color.White,
-            fontSize = 10.sp, lineHeight = 12.sp,
-            modifier = Modifier.align(Alignment.TopEnd).offset(x = 2.dp, y = 2.dp)
-                .background(MaterialTheme.colorScheme.error, RoundedCornerShape(20.dp)).padding(horizontal = 4.dp, vertical = 1.dp))
     }
 }
 
@@ -68,7 +65,7 @@ fun WebTopBar(screen: Screen) {
     ) {
         Text(
             text = if (screen == Screen.Login) "登录 linux.do" else "需要安全验证(通过后自动返回)",
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
     }
