@@ -31,7 +31,7 @@ val LightExtendedColors = ExtendedColors(
     onWarningContainer = Color(0xFF4A2800),
     like = Color(0xFFD81B60),
     gold = Color(0xFFB8860B),
-    codeBackground = Color(0xFFEDEDF4),
+    codeBackground = Color(0xFFF1F3F6),
 )
 
 val DarkExtendedColors = ExtendedColors(
@@ -43,7 +43,7 @@ val DarkExtendedColors = ExtendedColors(
     onWarningContainer = Color(0xFFFFE0B2),
     like = Color(0xFFF48FB1),
     gold = Color(0xFFFFD54F),
-    codeBackground = Color(0xFF1D2024),
+    codeBackground = Color(0xFF1C1F24),
 )
 
 /** 间距与尺寸。遵循 Material 的 4dp 网格。 */

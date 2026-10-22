@@ -17,7 +17,6 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.ui.graphics.vector.ImageVector
-import org.linuxdo.android.data.FloatingAction
 import org.linuxdo.android.data.TopicNotificationLevel
 import org.linuxdo.android.data.TopicSortOrder
 
@@ -40,11 +39,4 @@ object AppIcons {
         TopicNotificationLevel.Muted -> Icons.Outlined.NotificationsOff
     }
 
-    fun floatingAction(action: FloatingAction): ImageVector = when (action) {
-        FloatingAction.CreateTopic -> Icons.Outlined.Edit
-        FloatingAction.Sort -> Icons.AutoMirrored.Outlined.Sort
-        FloatingAction.Drafts -> Icons.Outlined.Drafts
-        FloatingAction.Search -> Icons.Outlined.Search
-        FloatingAction.Categories -> Icons.Outlined.GridView
-    }
 }

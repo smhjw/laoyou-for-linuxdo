@@ -1,5 +1,9 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -176,7 +180,7 @@ fun ProfileScreen(
                 PrimaryTabRow(
                     selectedTabIndex = ProfileTabs.indexOfFirst { it.first == section }.coerceAtLeast(0),
                     containerColor = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.padding(top = 8.dp),
+                    divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) },
                 ) {
                     ProfileTabs.forEach { (tabSection, label, icon) ->
                         Tab(
@@ -188,13 +192,18 @@ fun ProfileScreen(
                                     section = tabSection
                                 }
                             },
-                            text = { Text(label) },
-                            icon = {
+                            text = {
                                 BadgedBox(badge = {
                                     if (tabSection == ProfileSection.Notifications && notificationsUnread) Badge()
-                                }) { Icon(icon, contentDescription = null) }
+                                }) {
+                                    Text(
+                                        label,
+                                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp),
+                                        fontWeight = if (section == tabSection) FontWeight.SemiBold else FontWeight.Normal,
+                                    )
+                                }
                             },
-                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            selectedContentColor = MaterialTheme.colorScheme.onSurface,
                             unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -214,15 +223,8 @@ fun ProfileScreen(
                             if (!username.isNullOrBlank()) onOpenUserTopics?.invoke(username, "我的收藏", true)
                         },
                     )
-                    Column(
-                        Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        metrics.chunked(2).forEach { pair ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                pair.forEach { MetricCard(it, Modifier.weight(1f)) }
-                            }
-                        }
+                    Column(Modifier.fillMaxWidth()) {
+                        metrics.forEach { MetricCard(it) }
                     }
                 }
             }
@@ -312,19 +314,14 @@ private fun IdentityCard(
     topicsEntered: String,
     onLogout: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-    ) {
-        Column(Modifier.padding(20.dp)) {
+    Column(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(start = 20.dp, end = 12.dp, top = 8.dp, bottom = 20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 UserAvatar(
                     avatarUrl = null,
                     username = username,
                     cornerRadius = 12.dp,
-                    modifier = Modifier.size(64.dp),
+                    modifier = Modifier.size(56.dp),
                 )
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
@@ -334,16 +331,16 @@ private fun IdentityCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Text("你的社区足迹", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f))
+                    Text("你的社区足迹", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 TextButton(onClick = onLogout) { Text("退出登录") }
             }
             Spacer(Modifier.height(20.dp))
             Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
                 Stat(daysVisited, "访问天数", Modifier.weight(1f))
-                VerticalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Stat(timeRead, "阅读时长", Modifier.weight(1.2f))
-                VerticalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Stat(topicsEntered, "浏览话题", Modifier.weight(1f))
             }
         }
@@ -354,7 +351,7 @@ private fun IdentityCard(
 private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -365,29 +362,35 @@ private class MetricSpec(
     val onClick: (() -> Unit)? = null,
 )
 
-/** 统计卡片;可点击的那几张(草稿、创建话题、收藏)带水波纹并跳转到对应列表。 */
+/** 统计行:图标 + 名称 + 数值;可点的那几行(草稿、创建话题、收藏)带箭头并跳转到对应列表。 */
 @Composable
 private fun MetricCard(spec: MetricSpec, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.large)
-            .then(if (spec.onClick != null) Modifier.clickable(onClick = spec.onClick) else Modifier),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-    ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(40.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(spec.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-            }
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text(spec.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(spec.value, style = MaterialTheme.typography.titleLarge, maxLines = 1)
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .then(if (spec.onClick != null) Modifier.clickable(onClick = spec.onClick) else Modifier)
+                .heightIn(min = 56.dp)
+                .padding(start = 20.dp, end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(spec.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(16.dp))
+            Text(spec.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(
+                spec.value,
+                style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+            if (spec.onClick != null) {
+                Spacer(Modifier.width(4.dp))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
+            } else {
+                Spacer(Modifier.width(24.dp))
             }
         }
+        HorizontalDivider(Modifier.padding(start = 58.dp), color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 

@@ -26,7 +26,6 @@ sealed interface Route : Serializable {
 enum class SettingsPage(val title: String) {
     Appearance("外观"),
     Reading("阅读与浏览"),
-    FloatingBall("辅助悬浮球"),
     Notifications("通知与保活"),
     Network("网络与缓存"),
 }

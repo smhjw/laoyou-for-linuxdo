@@ -109,22 +109,17 @@ fun ListDivider(startIndent: Dp = Dimens.screenPadding, modifier: Modifier = Mod
 }
 
 /**
- * 分组容器:大圆角色块,左右留出页面边距。设置页、个人页的条目都放在这里面。
- * 条目之间的分隔线由调用方按需用 [ListDivider] 插入。
+ * 一组内容的容器。「清简」里不再铺圆角色块:内容直接落在页面底色上,组尾一条发丝线收口。
+ * 设置分组、分类列表的每一行都用它,所以改这一处两边一起变平。
  */
 @Composable
 fun SectionCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = Dimens.screenPadding),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-    ) {
-        Column(content = content)
+    Column(modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
+        content()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 

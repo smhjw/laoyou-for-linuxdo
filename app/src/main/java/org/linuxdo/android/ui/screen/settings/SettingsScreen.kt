@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import org.linuxdo.android.BuildConfig
 import org.linuxdo.android.data.AutoRefreshInterval
-import org.linuxdo.android.data.FloatingAction
 import org.linuxdo.android.data.NotificationPollInterval
 import org.linuxdo.android.data.NotificationScope
 import org.linuxdo.android.net.DohPresets
@@ -66,10 +65,6 @@ fun SettingsScreen(
     onOpenPage: (SettingsPage) -> Unit = {},
     dynamicColor: Boolean = true,
     onDynamicColor: (Boolean) -> Unit = {},
-    floatingBallEnabled: Boolean = true,
-    onFloatingBallEnabled: (Boolean) -> Unit = {},
-    floatingBallActions: List<FloatingAction> = FloatingAction.DEFAULT_ACTIONS,
-    onFloatingBallActions: (List<FloatingAction>) -> Unit = {},
     updateState: UpdateUiState = UpdateUiState(),
     onCheckUpdate: () -> Unit = {},
     syncReadProgress: Boolean = true,
@@ -123,7 +118,6 @@ fun SettingsScreen(
             when (page) {
                 null -> SettingsHome(
                     themeMode = themeMode,
-                    floatingBallEnabled = floatingBallEnabled,
                     backgroundNotification = backgroundNotification,
                     dohEnabled = dohEnabled,
                     updateState = updateState,
@@ -148,12 +142,6 @@ fun SettingsScreen(
                     readingStatus = readingStatus,
                     canRetryReading = canRetryReading,
                     onRetryReading = onRetryReading,
-                )
-                SettingsPage.FloatingBall -> FloatingBallSettings(
-                    enabled = floatingBallEnabled,
-                    onEnabled = onFloatingBallEnabled,
-                    actions = floatingBallActions,
-                    onActions = onFloatingBallActions,
                 )
                 SettingsPage.Notifications -> NotificationSettings(
                     backgroundNotification = backgroundNotification,
@@ -188,7 +176,6 @@ fun SettingsScreen(
 @Composable
 private fun SettingsHome(
     themeMode: ThemeMode,
-    floatingBallEnabled: Boolean,
     backgroundNotification: Boolean,
     dohEnabled: Boolean,
     updateState: UpdateUiState,
@@ -235,12 +222,6 @@ private fun SettingsHome(
             icon = Icons.AutoMirrored.Outlined.MenuBook,
             summary = "树形楼层、阅读进度、新话题感知",
             onClick = { onOpenPage(SettingsPage.Reading) },
-        )
-        SettingsItem(
-            title = SettingsPage.FloatingBall.title,
-            icon = Icons.Outlined.TouchApp,
-            summary = if (floatingBallEnabled) "已开启" else "已关闭",
-            onClick = { onOpenPage(SettingsPage.FloatingBall) },
         )
     }
     SettingsGroup {

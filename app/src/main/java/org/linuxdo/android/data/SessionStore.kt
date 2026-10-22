@@ -192,41 +192,6 @@ class SessionStore(context: Context) : org.linuxdo.android.net.DohConfigProvider
         prefs.edit().putBoolean(KEY_TOPIC_SORT_ASCENDING, ascending).apply()
     }
 
-    fun isFloatingBallEnabled(): Boolean =
-        plainPrefs.getBoolean(KEY_FLOATING_BALL_ENABLED, true)
-
-    fun setFloatingBallEnabled(enabled: Boolean) {
-        plainPrefs.edit().putBoolean(KEY_FLOATING_BALL_ENABLED, enabled).apply()
-    }
-
-    fun getFloatingBallActions(): List<FloatingAction> =
-        FloatingAction.parseActions(plainPrefs.getString(KEY_FLOATING_BALL_ACTIONS, null))
-
-    fun setFloatingBallActions(actions: List<FloatingAction>) {
-        plainPrefs.edit().putString(KEY_FLOATING_BALL_ACTIONS, FloatingAction.serializeActions(actions)).apply()
-    }
-
-    fun getFloatingBallXRatio(): Float =
-        plainPrefs.getFloat(KEY_FLOATING_BALL_X_RATIO, if (isFloatingBallOnRight()) 0.95f else 0.05f)
-
-    fun setFloatingBallXRatio(ratio: Float) {
-        plainPrefs.edit().putFloat(KEY_FLOATING_BALL_X_RATIO, ratio.coerceIn(0f, 1f)).apply()
-    }
-
-    fun getFloatingBallYRatio(): Float =
-        plainPrefs.getFloat(KEY_FLOATING_BALL_Y_RATIO, 1.0f)
-
-    fun setFloatingBallYRatio(ratio: Float) {
-        plainPrefs.edit().putFloat(KEY_FLOATING_BALL_Y_RATIO, ratio.coerceIn(0f, 1f)).apply()
-    }
-
-    fun isFloatingBallOnRight(): Boolean =
-        plainPrefs.getBoolean(KEY_FLOATING_BALL_ON_RIGHT, true)
-
-    fun setFloatingBallOnRight(onRight: Boolean) {
-        plainPrefs.edit().putBoolean(KEY_FLOATING_BALL_ON_RIGHT, onRight).apply()
-    }
-
     fun savedLogin(): String? = prefs.getString(KEY_SAVED_LOGIN, null)
 
     fun savedPassword(): String? = if (isRememberPassword()) prefs.getString(KEY_SAVED_PASSWORD, null) else null
@@ -581,11 +546,6 @@ class SessionStore(context: Context) : org.linuxdo.android.net.DohConfigProvider
         private const val KEY_HOME_FEED = "home_feed"
         private const val KEY_TOPIC_SORT_ORDER = "topic_sort_order"
         private const val KEY_TOPIC_SORT_ASCENDING = "topic_sort_ascending"
-        private const val KEY_FLOATING_BALL_ENABLED = "floating_ball_enabled"
-        private const val KEY_FLOATING_BALL_ACTIONS = "floating_ball_actions"
-        private const val KEY_FLOATING_BALL_X_RATIO = "floating_ball_x_ratio"
-        private const val KEY_FLOATING_BALL_Y_RATIO = "floating_ball_y_ratio"
-        private const val KEY_FLOATING_BALL_ON_RIGHT = "floating_ball_on_right"
         private const val KEY_SAVED_LOGIN = "saved_login"
         private const val KEY_LAST_SEEN_NOTIFICATION_ID = "last_seen_notification_id"
         private const val KEY_SAVED_PASSWORD = "saved_password"

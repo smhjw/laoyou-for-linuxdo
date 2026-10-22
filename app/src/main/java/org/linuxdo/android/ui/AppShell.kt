@@ -349,12 +349,6 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
     val drafts by viewModel.editor.drafts.collectAsStateWithLifecycle()
     val topicSortOrder by viewModel.topicSortOrder.collectAsStateWithLifecycle()
     val topicSortAscending by viewModel.topicSortAscending.collectAsStateWithLifecycle()
-    val floatingBall by viewModel.settings.floatingBall.collectAsStateWithLifecycle()
-    val floatingBallEnabled = floatingBall.enabled
-    val floatingBallActions = floatingBall.actions
-    val floatingBallXRatio = floatingBall.xRatio
-    val floatingBallYRatio = floatingBall.yRatio
-    val floatingBallOnRight = floatingBall.onRight
     val treeView by viewModel.settings.treeView.collectAsStateWithLifecycle()
     val syncReadProgress by viewModel.reading.syncEnabled.collectAsStateWithLifecycle()
     val themeMode by viewModel.settings.themeMode.collectAsStateWithLifecycle()
@@ -442,15 +436,6 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
                                 sortOrder = topicSortOrder,
                                 sortAscending = topicSortAscending,
                                 onSortChange = { viewModel.setTopicSort(it) },
-                                floatingBallEnabled = floatingBallEnabled,
-                                floatingBallActions = floatingBallActions,
-                                floatingBallXRatio = floatingBallXRatio,
-                                floatingBallYRatio = floatingBallYRatio,
-                                floatingBallOnRight = floatingBallOnRight,
-                                onFloatingBallPositionChange = viewModel.settings::updateFloatingBallPosition,
-                                onNavigateToDrafts = { stack.push(Route.Drafts) },
-                                onNavigateToSearch = { selected = MainTab.Search },
-                                onNavigateToCategories = { selected = MainTab.Categories },
                             )
 
                             is Route.TopicDetail -> {
@@ -587,15 +572,6 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
                                     sortOrder = topicSortOrder,
                                     sortAscending = topicSortAscending,
                                     onSortChange = { viewModel.setTopicSort(it, currentCategoryId = route.categoryId, currentCategorySlug = route.slug) },
-                                    floatingBallEnabled = floatingBallEnabled,
-                                    floatingBallActions = floatingBallActions,
-                                    floatingBallXRatio = floatingBallXRatio,
-                                    floatingBallYRatio = floatingBallYRatio,
-                                    floatingBallOnRight = floatingBallOnRight,
-                                    onFloatingBallPositionChange = viewModel.settings::updateFloatingBallPosition,
-                                    onNavigateToDrafts = { stack.push(Route.Drafts) },
-                                    onNavigateToSearch = { selected = MainTab.Search },
-                                    onNavigateToCategories = { selected = MainTab.Categories },
                                 )
                             }
 
@@ -664,15 +640,6 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
                                     sortOrder = topicSortOrder,
                                     sortAscending = topicSortAscending,
                                     onSortChange = { viewModel.setTopicSort(it) },
-                                    floatingBallEnabled = floatingBallEnabled,
-                                    floatingBallActions = floatingBallActions,
-                                    floatingBallXRatio = floatingBallXRatio,
-                                    floatingBallYRatio = floatingBallYRatio,
-                                    floatingBallOnRight = floatingBallOnRight,
-                                    onFloatingBallPositionChange = viewModel.settings::updateFloatingBallPosition,
-                                    onNavigateToDrafts = { stack.push(Route.Drafts) },
-                                    onNavigateToSearch = { selected = MainTab.Search },
-                                    onNavigateToCategories = { selected = MainTab.Categories },
                                 )
                             }
 
@@ -687,10 +654,6 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
                                 onThemeMode = viewModel.settings::setThemeMode,
                                 dynamicColor = dynamicColorPref,
                                 onDynamicColor = viewModel.settings::setDynamicColor,
-                                floatingBallEnabled = floatingBallEnabled,
-                                onFloatingBallEnabled = viewModel.settings::setFloatingBallEnabled,
-                                floatingBallActions = floatingBallActions,
-                                onFloatingBallActions = viewModel.settings::setFloatingBallActions,
                                 updateState = updateState,
                                 onCheckUpdate = viewModel.updates::onVersionItemClick,
                                 syncReadProgress = syncReadProgress,
@@ -773,6 +736,10 @@ private fun MainNavigation(state: UiState, viewModel: MainViewModel, lifecycle: 
                     },
                     onClose = viewModel.editor::closeTopicCreator,
                     onClearNotice = viewModel.editor::clearTopicCreatorNotice,
+                    onOpenDrafts = {
+                        viewModel.editor.closeTopicCreator()
+                        stack.push(Route.Drafts)
+                    },
                 )
             }
         }

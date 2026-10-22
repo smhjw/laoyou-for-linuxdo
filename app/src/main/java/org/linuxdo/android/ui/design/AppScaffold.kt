@@ -177,7 +177,8 @@ private fun AppTopBar(
 @Composable
 private fun appTopBarColors() = TopAppBarDefaults.topAppBarColors(
     containerColor = MaterialTheme.colorScheme.surface,
-    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+    // 滚动后不变色:层级交给内容下方的发丝线,顶栏保持干净
+    scrolledContainerColor = MaterialTheme.colorScheme.surface,
 )
 
 @Composable

@@ -49,38 +49,6 @@ enum class TopicSortOrder(val label: String, val apiValue: String?) {
     }
 }
 
-/** 辅助悬浮球支持的快捷动作类型。最多配置 5 项，用户可调整顺序与开启状态。 */
-enum class FloatingAction(
-    val id: String,
-    val title: String,
-    val shortLabel: String,
-    val description: String,
-) {
-    CreateTopic("create_topic", "发帖", "发帖", "快速发布新话题"),
-    Sort("sort", "排序", "排序", "切换话题列表排序"),
-    Drafts("drafts", "草稿", "草稿", "查看与编辑草稿"),
-    Search("search", "搜索", "搜索", "全站快捷搜索"),
-    Categories("categories", "分类", "分类", "浏览全部话题分类");
-
-    companion object {
-        val DEFAULT_ACTIONS = listOf(CreateTopic, Sort, Drafts, Search, Categories)
-
-        fun fromId(id: String?): FloatingAction? =
-            entries.firstOrNull { it.id.equals(id, ignoreCase = true) || it.name.equals(id, ignoreCase = true) }
-
-        fun parseActions(serialized: String?): List<FloatingAction> {
-            if (serialized.isNullOrBlank()) return DEFAULT_ACTIONS
-            val list = serialized.split(",")
-                .mapNotNull { fromId(it.trim()) }
-                .distinct()
-            return if (list.isEmpty()) DEFAULT_ACTIONS else list.take(5)
-        }
-
-        fun serializeActions(actions: List<FloatingAction>): String =
-            actions.distinct().take(5).joinToString(",") { it.id }
-    }
-}
-
 /**
  * linux.do 的 tags 下发的是对象数组(`[{"id":444,"name":"人工智能"}]`),
  * 而原版 Discourse 多数端点给的是字符串数组。两种都要能解析,否则整个列表会解析失败。

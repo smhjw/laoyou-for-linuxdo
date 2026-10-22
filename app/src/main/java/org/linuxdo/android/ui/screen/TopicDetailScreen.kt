@@ -785,23 +785,29 @@ fun TopicDetailScreen(
                         LazyColumn(
                             state = list,
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 96.dp),
+                            contentPadding = PaddingValues(bottom = 24.dp),
                         ) {
                             item("title") {
-                                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(state.topic?.title ?: title, style = MaterialTheme.typography.headlineSmall)
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically,
+                                Column(Modifier.fillMaxWidth()) {
+                                    Column(
+                                        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp),
                                     ) {
-                                        state.category?.let { CategoryTag(it) } ?: Spacer(Modifier.width(1.dp))
-                                        TopicNotificationSelector(
-                                            currentLevel = state.notificationLevel,
-                                            onSelectLevel = onSetNotificationLevel,
-                                            enabled = signedIn && state.topic != null && !state.notificationLevelUpdating,
-                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            state.category?.let { CategoryTag(it) }
+                                            Spacer(Modifier.weight(1f))
+                                            TopicNotificationSelector(
+                                                currentLevel = state.notificationLevel,
+                                                onSelectLevel = onSetNotificationLevel,
+                                                enabled = signedIn && state.topic != null && !state.notificationLevelUpdating,
+                                            )
+                                        }
+                                        Text(state.topic?.title ?: title, style = MaterialTheme.typography.headlineSmall)
                                     }
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 }
                             }
                             if (showTopError) state.error?.let { message ->
@@ -846,31 +852,26 @@ fun TopicDetailScreen(
                                 }
                             }
                         }
-                        // 左下角放阅读进度胶囊，右下角放回复按钮，配合列表底部 76dp 留白，彻底避免遮挡最后一条评论的操作栏。
-                        if (currentPostNumber != null && totalPosts > 1) {
-                            ReadingProgressPill(
-                                current = currentPostNumber ?: 1,
-                                total = totalPosts,
-                                modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 20.dp),
-                            ) {
-                                if (firstPostLoaded) scope.launch { list.animateScrollToItem(0) } else onReloadFromStart()
-                            }
-                        }
-                        if (canReply) {
-                            Box(Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)) {
-                                ReplyFab(enabled = !writeBusy) {
-                                    onOpenComposer(ComposerTarget.NewReply(topicId))
-                                }
-                            }
-                        }
                         (noticeToast ?: state.noticeMessage)?.let { notice ->
                             Snackbar(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
-                                    .padding(start = 16.dp, end = 16.dp, bottom = 88.dp),
+                                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                             ) { Text(notice) }
                         }
                     }
+                }
+                if (canReply || (currentPostNumber != null && totalPosts > 1)) {
+                    DetailBottomBar(
+                        canReply = canReply,
+                        replyEnabled = !writeBusy,
+                        current = currentPostNumber ?: 1,
+                        total = totalPosts,
+                        onReply = { onOpenComposer(ComposerTarget.NewReply(topicId)) },
+                        onProgressClick = {
+                            if (firstPostLoaded) scope.launch { list.animateScrollToItem(0) } else onReloadFromStart()
+                        },
+                    )
                 }
             }
             if (composer.open) {
@@ -932,37 +933,44 @@ fun TopicDetailScreen(
 }
 
 /**
- * 评论区头部栏:左侧总回复数,右侧「正序 / 倒序」分段按钮。
+ * 评论区头部栏:左侧总回复数,右侧「最早 / 最新」两个文字胶囊。
  * 固定跟在 1 楼下方 —— 顺序只作用于评论,主贴不参与翻转。
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CommentOrderBar(total: Int, descending: Boolean, busy: Boolean, onToggle: () -> Unit) {
-    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
+    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLow)) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().height(44.dp).padding(start = 20.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (total > 0) "全部回复 $total" else "全部回复",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
+                text = if (total > 0) "$total 条回复" else "全部回复",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.weight(1f))
-            SingleChoiceSegmentedButtonRow {
-                listOf("正序" to false, "倒序" to true).forEachIndexed { index, (label, value) ->
-                    SegmentedButton(
-                        selected = descending == value,
-                        onClick = { if (descending != value) onToggle() },
-                        enabled = !busy,
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
-                        icon = {},
-                        label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+            listOf("最早" to false, "最新" to true).forEach { (label, value) ->
+                val selected = descending == value
+                Box(
+                    Modifier
+                        .height(30.dp)
+                        .clip(CircleShape)
+                        .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                        .clickable(enabled = !busy && !selected, onClick = onToggle)
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
         }
-        ListDivider(startIndent = 0.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
@@ -1122,34 +1130,88 @@ private fun PostManageDialog(post: Post, onDismiss: () -> Unit, onEdit: () -> Un
     )
 }
 
-/** 回复整个话题的入口。 */
+/**
+ * 详情页底部固定栏:左边是"写回复"输入入口,右边是阅读进度(兼作回到 1 楼)。
+ * 它在列表之外占自己的高度,所以不会盖住最后一条楼层的操作栏。
+ */
 @Composable
-private fun ReplyFab(enabled: Boolean, onClick: () -> Unit) {
-    FloatingActionButton(
-        onClick = { if (enabled) onClick() },
-        containerColor = if (enabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-        contentColor = if (enabled) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline,
-    ) {
-        Icon(Icons.AutoMirrored.Filled.Reply, contentDescription = "回复这个话题")
-    }
-}
-
-/** 左下角的阅读进度。兼作"回到 1 楼"的按钮,省掉一个额外悬浮控件。 */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ReadingProgressPill(current: Int, total: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shadowElevation = 3.dp,
-    ) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.ArrowUpward, contentDescription = "回到顶部", modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("$current / $total", style = MaterialTheme.typography.labelLarge)
+private fun DetailBottomBar(
+    canReply: Boolean,
+    replyEnabled: Boolean,
+    current: Int,
+    total: Int,
+    onReply: () -> Unit,
+    onProgressClick: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Row(
+            Modifier.fillMaxWidth().height(64.dp).padding(start = 16.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (canReply) {
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .height(42.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .clickable(enabled = replyEnabled, onClick = onReply)
+                        .semantics { contentDescription = "回复这个话题" }
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Outlined.Edit,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (replyEnabled) "写下你的回复…" else "正在提交…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+            } else {
+                Spacer(Modifier.weight(1f))
+            }
+            if (total > 1) {
+                Column(
+                    Modifier
+                        .clip(MaterialTheme.shapes.small)
+                        .clickable(onClick = onProgressClick)
+                        .semantics { contentDescription = "阅读进度 $current / $total，点击回到 1 楼" }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        "$current / $total",
+                        style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                    val fraction = (current.toFloat() / total).coerceIn(0.02f, 1f)
+                    Box(
+                        Modifier
+                            .width(44.dp)
+                            .height(3.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondaryContainer),
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(fraction)
+                                .background(MaterialTheme.colorScheme.primary),
+                        )
+                    }
+                }
+            } else {
+                Spacer(Modifier.width(8.dp))
+            }
         }
     }
 }
@@ -1924,7 +1986,7 @@ private fun PostRow(
         Modifier
             .fillMaxWidth()
             .background(background)
-            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = if (compactBottom) 8.dp else 12.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = if (compactBottom) 8.dp else 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // 长按放在头部这一行,而不是整条楼层:正文裹在 SelectionContainer 里,
@@ -1942,9 +2004,9 @@ private fun PostRow(
                 avatarUrl = avatarUrlOf(post.avatarTemplate, post.animatedAvatar),
                 fallbackUrl = avatarUrlOf(post.avatarTemplate, null),
                 username = post.username,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(36.dp),
             )
-            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+            Column(Modifier.weight(1f).padding(start = 10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         post.displayName.ifBlank { post.username },

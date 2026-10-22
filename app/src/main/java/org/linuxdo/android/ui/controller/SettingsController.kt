@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.linuxdo.android.AppContainer
 import org.linuxdo.android.data.AutoRefreshInterval
-import org.linuxdo.android.data.FloatingAction
 import org.linuxdo.android.data.NotificationPollInterval
 import org.linuxdo.android.data.NotificationScope
 import org.linuxdo.android.service.NotificationHelper
@@ -35,8 +34,8 @@ class SettingsController(
     )
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
-    /** Android 12+ 跟随壁纸取色(Material You);关闭后用应用自带的蓝色板。 */
-    private val _dynamicColor = MutableStateFlow(prefs.getBoolean("dynamic_color", true))
+    /** Android 12+ 跟随壁纸取色(Material You);默认关闭,用「清简」色板。换了键名,让老用户也先看到新色板。 */
+    private val _dynamicColor = MutableStateFlow(prefs.getBoolean("dynamic_color_qj", false))
     val dynamicColor: StateFlow<Boolean> = _dynamicColor.asStateFlow()
 
     private val _treeView = MutableStateFlow(prefs.getBoolean("tree_view", true))
@@ -57,17 +56,6 @@ class SettingsController(
     val customRealtimeSeconds = _customRealtimeSeconds.asStateFlow()
     private val _keepAliveService = MutableStateFlow(store.isKeepAliveServiceEnabled())
     val keepAliveService = _keepAliveService.asStateFlow()
-
-    private val _floatingBall = MutableStateFlow(
-        FloatingBallSettings(
-            enabled = store.isFloatingBallEnabled(),
-            actions = store.getFloatingBallActions(),
-            xRatio = store.getFloatingBallXRatio(),
-            yRatio = store.getFloatingBallYRatio(),
-            onRight = store.isFloatingBallOnRight(),
-        )
-    )
-    val floatingBall: StateFlow<FloatingBallSettings> = _floatingBall.asStateFlow()
 
     /** 启动时对齐通知渠道、后台轮询与常驻服务。 */
     fun start() {
@@ -90,7 +78,7 @@ class SettingsController(
 
     fun setDynamicColor(enabled: Boolean) {
         _dynamicColor.value = enabled
-        prefs.edit { putBoolean("dynamic_color", enabled) }
+        prefs.edit { putBoolean("dynamic_color_qj", enabled) }
     }
 
     fun setTreeView(enabled: Boolean) {
@@ -159,37 +147,4 @@ class SettingsController(
         }
     }
 
-    fun setFloatingBallEnabled(enabled: Boolean) {
-        _floatingBall.value = _floatingBall.value.copy(enabled = enabled)
-        store.setFloatingBallEnabled(enabled)
-    }
-
-    fun setFloatingBallActions(actions: List<FloatingAction>) {
-        val valid = actions.distinct().take(5)
-        _floatingBall.value = _floatingBall.value.copy(actions = valid)
-        store.setFloatingBallActions(valid)
-    }
-
-    fun updateFloatingBallPosition(xRatio: Float, yRatio: Float) {
-        val onRight = xRatio >= 0.5f
-        _floatingBall.value = _floatingBall.value.copy(xRatio = xRatio, yRatio = yRatio, onRight = onRight)
-        store.setFloatingBallXRatio(xRatio)
-        store.setFloatingBallYRatio(yRatio)
-        store.setFloatingBallOnRight(onRight)
-    }
-
-    fun updateFloatingBallPosition(yRatio: Float, onRight: Boolean) {
-        updateFloatingBallPosition(if (onRight) 0.95f else 0.05f, yRatio)
-        // 贴边吸附时 x 只是近似值,以调用方给的左右为准。
-        _floatingBall.value = _floatingBall.value.copy(onRight = onRight)
-        store.setFloatingBallOnRight(onRight)
-    }
 }
-
-data class FloatingBallSettings(
-    val enabled: Boolean,
-    val actions: List<FloatingAction>,
-    val xRatio: Float,
-    val yRatio: Float,
-    val onRight: Boolean,
-)

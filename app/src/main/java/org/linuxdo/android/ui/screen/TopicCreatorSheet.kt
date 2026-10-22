@@ -1,5 +1,6 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material.icons.outlined.Drafts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.outlined.Reply
@@ -115,6 +116,7 @@ fun TopicCreatorSheet(
     onSubmit: () -> Unit,
     onClose: () -> Unit,
     onClearNotice: () -> Unit,
+    onOpenDrafts: (() -> Unit)? = null,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     var showEmojiPicker by remember { mutableStateOf(false) }
@@ -225,14 +227,23 @@ fun TopicCreatorSheet(
                 modifier = Modifier.weight(1f).padding(start = 4.dp),
             )
 
-            TextButton(
-                onClick = {
-                    editorView?.exportToMarkdown()?.let { onRawChange(it) }
-                    onSaveDraft(false)
-                },
-                enabled = state.canSaveDraft,
-            ) {
-                Text(if (state.savingDraft) "保存中…" else "保存")
+            // 还没写内容时这里是「草稿」入口(接着写之前存下的);一旦开始写就换成「保存」。
+            if (onOpenDrafts != null && !state.isReplyDraft && !state.hasUnsavedChanges && !state.savingDraft) {
+                TextButton(onClick = onOpenDrafts) {
+                    Icon(Icons.Outlined.Drafts, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("草稿")
+                }
+            } else {
+                TextButton(
+                    onClick = {
+                        editorView?.exportToMarkdown()?.let { onRawChange(it) }
+                        onSaveDraft(false)
+                    },
+                    enabled = state.canSaveDraft,
+                ) {
+                    Text(if (state.savingDraft) "保存中…" else "保存")
+                }
             }
 
             Spacer(Modifier.width(4.dp))

@@ -1,5 +1,6 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -104,7 +105,7 @@ fun DraftsScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp),
+                contentPadding = PaddingValues(bottom = 24.dp),
             ) {
                 if (state.loading && !state.loaded) {
                     item("loading") { LoadingBox() }
@@ -208,21 +209,8 @@ private fun DraftCard(
         RelativeTime.format(draft.createdAt)
     }
 
-    OutlinedCard(
-        onClick = onEdit,
-        enabled = !isDeleting,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
-        border = CardDefaults.outlinedCardBorder().copy(
-            brush = SolidColor(MaterialTheme.colorScheme.outlineVariant),
-        ),
-    ) {
-        Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp)) {
+    Column(Modifier.fillMaxWidth().clickable(enabled = !isDeleting, onClick = onEdit)) {
+        Column(Modifier.padding(start = 20.dp, top = 16.dp, end = 12.dp, bottom = 6.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 if (avatarUrl != null) {
                     UserAvatar(
@@ -336,13 +324,14 @@ private fun DraftCard(
                     Spacer(Modifier.width(6.dp))
                     Text("删除")
                 }
-                FilledTonalButton(onClick = onEdit, enabled = !isDeleting) {
+                TextButton(onClick = onEdit, enabled = !isDeleting) {
                     Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("继续编辑")
                 }
             }
         }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
