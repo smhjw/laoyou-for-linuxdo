@@ -1,15 +1,15 @@
 {
-  "versionCode": 14,
-  "versionName": "1.4.0",
+  "versionCode": 15,
+  "versionName": "1.5.0",
   "forceUpdate": false,
   "minVersionCode": 1,
-  "title": "LINUX DO Android v1.4.0 更新说明",
+  "title": "佬友 v1.5.0 更新说明",
   "changelog": [
-    "1、全新 Material 3 界面：Android 12+ 跟随壁纸动态取色，深色模式全面适配",
-    "2、原生 Android 交互：底部导航栏、预测性返回手势与共享轴转场动画",
-    "3、首页、详情、搜索、分类、个人页、设置、登录、草稿与发帖页全部重新设计",
-    "4、代码结构重构（拆分超大页面与 ViewModel），提升稳定性与可维护性"
+    "1、更名「佬友」，启用全新图标（L + 光标），支持 Android 13 主题图标",
+    "2、全新「清简」界面：去掉悬浮球和所有浮层，发帖进顶栏、排序进标签行，不再遮挡内容",
+    "3、平铺列表 + 发丝分割线，一屏看到更多话题；置顶合成一行、新动态改为列表首行",
+    "4、话题详情底部固定回复栏与阅读进度；我的、分类、设置、草稿同步改版，深色模式全面优化"
   ],
-  "apkUrl": "https://github.com/smhjw/laoyou-for-linuxdo/releases/download/v1.4.0/linuxdo-1.4.0-release.apk",
-  "apkSha256": "db50a837200b3b514835354e287e005b299fcee9137cfe7d989c7d6c05aaae8a"
+  "apkUrl": "https://github.com/smhjw/laoyou-for-linuxdo/releases/download/v1.5.0/laoyou-1.5.0-release.apk",
+  "apkSha256": "0208b8c5ceaded7949c4b67bdce23793a3826e424659d8a8a9245419dd7a36de"
 }
