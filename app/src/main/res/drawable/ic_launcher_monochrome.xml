@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13+ 主题图标:系统按壁纸给它上色,只需要单色图形。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="10.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M36.75,36 L36.75,72 L57.75,72" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M69,66.75 L74.25,66.75 Q76.5,66.75 76.5,69 L76.5,75 Q76.5,77.25 74.25,77.25 L69,77.25 Q66.75,77.25 66.75,75 L66.75,69 Q66.75,66.75 69,66.75 Z" />
+</vector>

@@ -1,5 +1,10 @@
 package org.linuxdo.android.ui.screen
 
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
@@ -165,7 +170,7 @@ fun LoginScreen(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                "登录你的 LINUX DO 账号",
+                "用 LINUX DO 账号登录佬友",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
@@ -691,38 +696,25 @@ private fun SendCodeButton(
 
 @Composable
 private fun AppIconBadge() {
-    val stemColor = MaterialTheme.colorScheme.onSurface
-    Surface(
-        modifier = Modifier.size(88.dp),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shadowElevation = 2.dp,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            // 与启动图标 ic_launcher_foreground 同一组路径;L 形主体跟随前景色,深色模式下也看得见。
-            Canvas(Modifier.size(58.dp)) {
-                scale(size.width / 108f, size.height / 108f, Offset.Zero) {
-                    val p1 = Path().apply {
-                        moveTo(34f, 27f); cubicTo(34f, 24f, 37f, 24f, 37f, 24f)
-                        lineTo(44f, 24f); cubicTo(47f, 24f, 47f, 27f, 47f, 27f)
-                        lineTo(47f, 63f); lineTo(70f, 63f); lineTo(49f, 84f)
-                        lineTo(37f, 84f); cubicTo(34f, 84f, 34f, 81f, 34f, 81f); close()
-                    }
-                    drawPath(p1, stemColor)
-                    val p2 = Path().apply {
-                        moveTo(54f, 84f); lineTo(76f, 62f)
-                        cubicTo(78f, 61f, 78f, 64f, 78f, 64f)
-                        lineTo(78f, 81f); cubicTo(78f, 84f, 75f, 84f, 75f, 84f); close()
-                    }
-                    drawPath(p2, BrandBlue)
-                }
-            }
+    // 与启动图标同一个图形:品牌蓝底 + 白色 L + 浅蓝光标块。图标本身不随深浅模式变色。
+    Canvas(Modifier.size(80.dp)) {
+        scale(size.width / 120f, size.height / 120f, Offset.Zero) {
+            drawRoundRect(BrandBlue, cornerRadius = CornerRadius(30f, 30f))
+            val stem = Path().apply { moveTo(40f, 30f); lineTo(40f, 78f); lineTo(68f, 78f) }
+            drawPath(stem, Color.White, style = Stroke(width = 14f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+            drawRoundRect(
+                CursorBlue,
+                topLeft = Offset(80f, 71f),
+                size = Size(13f, 14f),
+                cornerRadius = CornerRadius(3f, 3f),
+            )
         }
     }
 }
 
-/** 启动图标里的品牌蓝。 */
-private val BrandBlue = Color(0xFF4055DF)
+/** 启动图标的品牌蓝与光标色,和 res/values/colors.xml、ic_launcher_foreground 保持一致。 */
+private val BrandBlue = Color(0xFF3451D1)
+private val CursorBlue = Color(0xFFAEBBFF)
 
 // ── 小图标（Canvas 手绘，不依赖 Material Icons） ──────────────────
 

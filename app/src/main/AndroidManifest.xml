@@ -48,7 +48,7 @@
     <application
         android:name=".App"
         android:allowBackup="false"
-        android:label="LinuxDo"
+        android:label="佬友"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"

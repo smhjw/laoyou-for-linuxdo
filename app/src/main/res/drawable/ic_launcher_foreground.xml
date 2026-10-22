@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 佬友图标前景:白色 L + 浅蓝光标块(终端里的 "L▮")。图形落在 108dp 画布中央 66dp 安全区内。 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#202226"
-        android:pathData="M34,27 Q34,24 37,24 L44,24 Q47,24 47,27 L47,63 L70,63 L49,84 L37,84 Q34,84 34,81 Z" />
-    <path android:fillColor="#4055DF"
-        android:pathData="M54,84 L76,62 Q78,61 78,64 L78,81 Q78,84 75,84 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="10.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M36.75,36 L36.75,72 L57.75,72" />
+    <path
+        android:fillColor="#FFAEBBFF"
+        android:pathData="M69,66.75 L74.25,66.75 Q76.5,66.75 76.5,69 L76.5,75 Q76.5,77.25 74.25,77.25 L69,77.25 Q66.75,77.25 66.75,75 L66.75,69 Q66.75,66.75 69,66.75 Z" />
 </vector>

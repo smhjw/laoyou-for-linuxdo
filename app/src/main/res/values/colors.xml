@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 「清简」强调色,与界面里的 primary 一致 -->
+    <color name="ic_launcher_background">#3451D1</color>
+</resources>
