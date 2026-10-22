@@ -699,7 +699,8 @@ private fun AppIconBadge() {
     // 与启动图标同一个图形:品牌蓝底 + 白色 L + 浅蓝光标块。图标本身不随深浅模式变色。
     Canvas(Modifier.size(80.dp)) {
         scale(size.width / 120f, size.height / 120f, Offset.Zero) {
-            drawRoundRect(BrandBlue, cornerRadius = CornerRadius(30f, 30f))
+            // 缩放后的坐标系是 120×120 设计稿;不显式给 size 会用画布像素尺寸,再被放大一次。
+            drawRoundRect(BrandBlue, size = Size(120f, 120f), cornerRadius = CornerRadius(30f, 30f))
             val stem = Path().apply { moveTo(40f, 30f); lineTo(40f, 78f); lineTo(68f, 78f) }
             drawPath(stem, Color.White, style = Stroke(width = 14f, cap = StrokeCap.Round, join = StrokeJoin.Round))
             drawRoundRect(
