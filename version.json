@@ -10,6 +10,6 @@
     "3、首页、详情、搜索、分类、个人页、设置、登录、草稿与发帖页全部重新设计",
     "4、代码结构重构（拆分超大页面与 ViewModel），提升稳定性与可维护性"
   ],
-  "apkUrl": "https://github.com/smhjw/linuxdo-android-hjw/releases/download/v1.4.0/linuxdo-1.4.0-release.apk",
+  "apkUrl": "https://github.com/smhjw/laoyou-for-linuxdo/releases/download/v1.4.0/linuxdo-1.4.0-release.apk",
   "apkSha256": "db50a837200b3b514835354e287e005b299fcee9137cfe7d989c7d6c05aaae8a"
 }

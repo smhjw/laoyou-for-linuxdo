@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/smhjw/linuxdo-android-hjw/releases/latest"><b>下载最新版</b></a>
+  <a href="https://github.com/smhjw/laoyou-for-linuxdo/releases/latest"><b>下载最新版</b></a>
   ·
   <a href="https://linux.do/t/topic/2998703">L 站原帖</a>
 </p>
@@ -57,7 +57,7 @@
 
 ## 下载与安装
 
-- 到 [Releases](https://github.com/smhjw/linuxdo-android-hjw/releases/latest) 下载最新的 APK。
+- 到 [Releases](https://github.com/smhjw/laoyou-for-linuxdo/releases/latest) 下载最新的 APK。
 - 需要 **Android 8.0 及以上**，目前只提供 **arm64-v8a** 安装包。
 - 本仓库的安装包用自己的签名发布，和上游原版签名不同：**装过原版的话需要先卸载**，之后应用内更新都会指向本仓库。
 

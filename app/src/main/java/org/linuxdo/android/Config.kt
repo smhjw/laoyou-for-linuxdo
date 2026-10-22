@@ -52,14 +52,14 @@ object Config {
     const val SESSION_COOKIE = "_t"
     const val CF_CLEARANCE_COOKIE = "cf_clearance"
 
-    /** 应用版本检查与升级（公开 APK 分发仓库 smhjw/linuxdo-android-hjw 根目录 version.json）。 */
+    /** 应用版本检查与升级（公开 APK 分发仓库 smhjw/laoyou-for-linuxdo 根目录 version.json）。 */
     val UPDATE_VERSION_JSON_URLS = listOf(
-        "https://api.github.com/repos/smhjw/linuxdo-android-hjw/contents/version.json",
-        "https://raw.githubusercontent.com/smhjw/linuxdo-android-hjw/master/version.json",
-        "https://fastly.jsdelivr.net/gh/smhjw/linuxdo-android-hjw@master/version.json",
+        "https://api.github.com/repos/smhjw/laoyou-for-linuxdo/contents/version.json",
+        "https://raw.githubusercontent.com/smhjw/laoyou-for-linuxdo/master/version.json",
+        "https://fastly.jsdelivr.net/gh/smhjw/laoyou-for-linuxdo@master/version.json",
     )
-    const val UPDATE_RELEASES_API_URL = "https://api.github.com/repos/smhjw/linuxdo-android-hjw/releases/latest"
-    const val UPDATE_RELEASES_PAGE_URL = "https://github.com/smhjw/linuxdo-android-hjw/releases/latest"
+    const val UPDATE_RELEASES_API_URL = "https://api.github.com/repos/smhjw/laoyou-for-linuxdo/releases/latest"
+    const val UPDATE_RELEASES_PAGE_URL = "https://github.com/smhjw/laoyou-for-linuxdo/releases/latest"
 
     /**
      * 远端 version.json 尚未推送到仓库时的本地兜底清单（与根目录 version.json 保持一致，便于本地预演测试）。
@@ -80,7 +80,7 @@ object Config {
             "3、新增浏览帖子数与阅读时长同步功能（默认关闭，开启可能触发掉盾）",
             "4、支持评论正倒序切换、Emoji 表情面板、分类等级下拉切换及多项细节修复"
           ],
-          "apkUrl": "https://github.com/smhjw/linuxdo-android-hjw/releases/download/v1.2.0/linuxdo-1.2.0-release.apk",
+          "apkUrl": "https://github.com/smhjw/laoyou-for-linuxdo/releases/download/v1.2.0/linuxdo-1.2.0-release.apk",
           "apkSha256": ""
         }
     """
