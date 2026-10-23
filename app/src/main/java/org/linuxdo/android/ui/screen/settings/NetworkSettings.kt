@@ -1,5 +1,6 @@
 package org.linuxdo.android.ui.screen.settings
 
+import androidx.compose.material.icons.outlined.Memory
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -70,6 +71,8 @@ internal fun NetworkSettings(
     onUpdateServer: (oldServer: DohServer, url: String, name: String) -> Unit,
     onDeleteServer: (DohServer) -> Unit,
     onResetServers: () -> Unit,
+    goEchEnabled: Boolean = true,
+    onGoEchEnabled: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
     var showAddDialog by remember { mutableStateOf(false) }
@@ -101,6 +104,14 @@ internal fun NetworkSettings(
                 summary = "当前节点不可用时自动换到其他健康节点",
                 checked = autoFailover,
                 onCheckedChange = onAutoFailover,
+            )
+            SettingsSwitchItem(
+                title = "自研 ECH 内核（实验）",
+                icon = Icons.Outlined.Memory,
+                summary = if (goEchEnabled) "已开启 · linux.do 走开源的 Go ECH 直连，失败时自动退回原内核"
+                else "关闭 · 使用原来的闭源直连内核",
+                checked = goEchEnabled,
+                onCheckedChange = onGoEchEnabled,
             )
             SettingsSwitchItem(
                 title = "智能定时测速切优",

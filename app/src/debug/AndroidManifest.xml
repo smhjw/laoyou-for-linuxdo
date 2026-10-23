@@ -7,6 +7,10 @@
             android:name=".debug.UiGalleryActivity"
             android:exported="true"
             android:theme="@style/Theme.LinuxDo" />
+        <!-- 仅 debug 构建:不登录也能验证网络层(自研 ECH 内核)。 -->
+        <activity
+            android:name=".debug.NetProbeActivity"
+            android:exported="true" />
     </application>
 
 </manifest>

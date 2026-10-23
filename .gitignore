@@ -31,3 +31,5 @@ keystore.properties
 *.so
 *.aar
 !/app/libs/tunnel-release.aar
+!/app/libs/echnet.aar
+/native/build/

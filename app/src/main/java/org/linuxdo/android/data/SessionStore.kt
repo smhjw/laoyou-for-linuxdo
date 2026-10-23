@@ -473,6 +473,13 @@ class SessionStore(context: Context) : org.linuxdo.android.net.DohConfigProvider
     // ── DoH 偏好读写 ─────────────────────────────────────────────────────────────
 
     /** 是否开启 DoH（默认开启，支持免代理直连） */
+    /** 自研 ECH 内核(Go 写的 echnet)是否接管 linux.do 的请求;关掉则回到原来的闭源传输层。 */
+    fun isGoEchEnabled(): Boolean = plainPrefs.getBoolean(KEY_GO_ECH_ENABLED, true)
+
+    fun setGoEchEnabled(enabled: Boolean) {
+        plainPrefs.edit().putBoolean(KEY_GO_ECH_ENABLED, enabled).apply()
+    }
+
     override fun isDohEnabled(): Boolean = plainPrefs.getBoolean(KEY_DOH_ENABLED, true)
 
     fun setDohEnabled(enabled: Boolean) {
@@ -574,6 +581,7 @@ class SessionStore(context: Context) : org.linuxdo.android.net.DohConfigProvider
 
         // ── DoH 相关偏好 ──────────────────────────────────────────────────────────
         const val KEY_DOH_ENABLED = "doh_enabled"
+        const val KEY_GO_ECH_ENABLED = "go_ech_enabled"
         const val KEY_DOH_SERVER_URL = "doh_server_url"
         const val KEY_DOH_AUTO_FAILOVER = "doh_auto_failover"
         const val KEY_DOH_AUTO_OPTIMIZE = "doh_auto_optimize"

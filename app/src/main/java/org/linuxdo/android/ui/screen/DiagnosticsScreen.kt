@@ -149,6 +149,23 @@ fun DiagnosticsScreen(state: UiState, viewModel: MainViewModel, onBack: () -> Un
             }
         }
 
+        item(key = "go-ech") {
+            var refresh by remember { mutableStateOf(0) }
+            val goStats = remember(refresh) { viewModel.doh.goEchStats()?.let { runCatching { org.json.JSONObject(it) }.getOrNull() } }
+            SettingsGroup(title = "自研 ECH 内核") {
+                if (goStats == null) {
+                    InfoRow("状态", "未启用（关闭了开关，或当前没走 DoH 直连）")
+                } else {
+                    InfoRow("请求 / 失败", "${goStats.optLong("requests")} / ${goStats.optLong("failures")}")
+                    InfoRow("DoH 节点", goStats.optString("lastServer").ifBlank { "-" })
+                    InfoRow("连接 IP · 握手", "${goStats.optString("lastIP").ifBlank { "-" }} · ${goStats.optLong("handshakeMs")} ms")
+                    InfoRow("ECH 配置刷新次数", goStats.optLong("echRetries").toString())
+                    InfoRow("最近错误", goStats.optString("lastError").ifBlank { "无" })
+                }
+                SettingsItem(title = "刷新统计", icon = Icons.Outlined.Refresh, onClick = { refresh++ })
+            }
+        }
+
         item(key = "log-title") { SectionTitle("日志") }
         // 日志文本可能重复,不能拿内容当 key。
         items(lines.asReversed()) { line ->

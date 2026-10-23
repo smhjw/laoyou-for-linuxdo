@@ -33,6 +33,9 @@ class DohController(
     private val _autoOptimize = MutableStateFlow(store.isDohAutoOptimizeEnabled())
     val autoOptimize = _autoOptimize.asStateFlow()
 
+    private val _goEchEnabled = MutableStateFlow(store.isGoEchEnabled())
+    val goEchEnabled = _goEchEnabled.asStateFlow()
+
     /** 节点延迟:key = DohServer.id,value = 毫秒;null 表示测速中,-1 表示超时。 */
     private val _latencies = MutableStateFlow<Map<String, Long?>>(emptyMap())
     val latencies = _latencies.asStateFlow()
@@ -72,6 +75,16 @@ class DohController(
         _autoFailover.value = enabled
         container.dohCoordinator.refresh()
     }
+
+    /** 切换自研 ECH 内核;重建客户端后新请求立即生效。 */
+    fun setGoEchEnabled(enabled: Boolean) {
+        store.setGoEchEnabled(enabled)
+        _goEchEnabled.value = enabled
+        container.rebuildHttpClient()
+    }
+
+    /** 自研内核的诊断 JSON;还没初始化时为 null。 */
+    fun goEchStats(): String? = container.goEchStatsOrNull()
 
     fun setAutoOptimize(enabled: Boolean) {
         store.setDohAutoOptimizeEnabled(enabled)

@@ -22,6 +22,7 @@ import org.linuxdo.android.data.SessionStore
  * @param userAgent 全局统一 UA
  * @param dns          可选的自定义 DNS 实现（注入 DoH 时传入 AdaptiveDohDns 实例；null 表示使用系统默认 DNS）
  * @param dohTransport 可选的原生 DoH + ECH TLS 传输层（注入后替换底层 Socket 与 TLS 握手）
+ * @param goEch        自研 ECH 内核;给了就由它接管 linux.do 的请求,其余请求与它失败时仍走上面的传输层
  */
 fun buildSharedHttpClient(
     store: SessionStore,
@@ -29,6 +30,8 @@ fun buildSharedHttpClient(
     dns: Dns? = null,
     dohTransport: DohTransport? = null,
     failoverCoordinator: DohFailoverCoordinator? = null,
+    goEch: GoEchEngine? = null,
+    onGoEchFallback: (okhttp3.Request, java.io.IOException) -> Unit = { _, _ -> },
 ): OkHttpClient {
     val dispatcher = Dispatcher().apply {
         maxRequests = 64
@@ -46,6 +49,18 @@ fun buildSharedHttpClient(
     if (failoverCoordinator != null) {
         // 应用级故障上报与幂等单次重试拦截器（置于最外层，感知 DNS/连接/TLS 全阶段）
         builder.addInterceptor(DohFailoverInterceptor(failoverCoordinator))
+    }
+
+    if (goEch != null) {
+        // 放在故障转移拦截器之后:echnet 抛出的 IOException 同样会被它感知
+        builder.addInterceptor(
+            GoEchInterceptor(
+                engine = goEch,
+                sessionHeaders = { withSessionHeaders(it, store, userAgent) },
+                followRedirects = true,
+                onFallback = onGoEchFallback,
+            ),
+        )
     }
 
     if (dohTransport != null) {
@@ -129,22 +144,26 @@ private class SessionHeaderInterceptor(
     private val store: SessionStore,
     private val userAgent: String,
 ) : Interceptor {
-    override fun intercept(chain: Interceptor.Chain): Response {
-        val original = chain.request()
-        // 重定向后的每一跳都重新检查,避免站内图片跳转到 CDN 时携带论坛 Cookie。
-        if (original.url.host != Config.HOST || !original.url.isHttps) {
-            return chain.proceed(original.newBuilder().removeHeader("Cookie").removeHeader("X-CSRF-Token").build())
-        }
+    override fun intercept(chain: Interceptor.Chain): Response =
+        chain.proceed(withSessionHeaders(chain.request(), store, userAgent))
+}
 
-        val builder = original.newBuilder()
-            .header("User-Agent", userAgent)
-            .header("Referer", "${Config.BASE_URL}/")
-        // 这里运行在 OkHttp 的 IO 线程,不能调 syncFromWebView() —— 它要在主线程访问
-        // CookieManager。只读加密存储里的快照,快照由 Transport 在每次 JSON 请求前刷新。
-        val cookies = store.storedCookies()
-        if (cookies.isNotEmpty()) {
-            builder.header("Cookie", SessionStore.toCookieHeader(cookies))
-        }
-        return chain.proceed(builder.build())
+/**
+ * 站内请求补上固定 UA、Referer 与会话 Cookie;站外请求去掉论坛 Cookie 与 CSRF 头。
+ * 重定向后的每一跳都要重新过一遍,避免站内图片跳转到 CDN 时携带论坛 Cookie。
+ */
+internal fun withSessionHeaders(original: okhttp3.Request, store: SessionStore, userAgent: String): okhttp3.Request {
+    if (original.url.host != Config.HOST || !original.url.isHttps) {
+        return original.newBuilder().removeHeader("Cookie").removeHeader("X-CSRF-Token").build()
     }
+    val builder = original.newBuilder()
+        .header("User-Agent", userAgent)
+        .header("Referer", "${Config.BASE_URL}/")
+    // 这里运行在 OkHttp 的 IO 线程,不能调 syncFromWebView() —— 它要在主线程访问
+    // CookieManager。只读加密存储里的快照,快照由 Transport 在每次 JSON 请求前刷新。
+    val cookies = store.storedCookies()
+    if (cookies.isNotEmpty()) {
+        builder.header("Cookie", SessionStore.toCookieHeader(cookies))
+    }
+    return builder.build()
 }

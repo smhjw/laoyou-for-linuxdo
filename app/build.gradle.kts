@@ -75,6 +75,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0")
     // 原生 DoH + ECH 安全直连 SDK（闭源二进制 AAR，包含深度混淆网络层与 native 动态库）
     implementation(files("libs/tunnel-release.aar"))
+    // 自研 ECH 直连内核(开源,源码在 native/echnet,用 native/build-echnet.sh 重新生成)
+    implementation(files("libs/echnet.aar"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")

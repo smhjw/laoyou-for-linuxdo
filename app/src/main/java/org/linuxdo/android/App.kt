@@ -25,6 +25,8 @@ import org.linuxdo.android.net.AdaptiveDohDns
 import org.linuxdo.android.net.DohFailoverCoordinator
 import org.linuxdo.android.net.DohPresets
 import org.linuxdo.android.net.DohTransport
+import org.linuxdo.android.net.GoEchEngine
+import org.linuxdo.android.net.loadDohServers
 import org.linuxdo.android.net.NetworkStateMonitor
 import org.linuxdo.android.net.buildBootstrapClient
 import org.linuxdo.android.net.buildSharedHttpClient
@@ -89,6 +91,9 @@ class AppContainer(context: Context) {
     val userAgent: String = resolveUserAgent(context, sessionStore)
     val browser = BrowserSession(context, userAgent, sessionStore, diagnostics)
 
+    // 必须在 dohCoordinator 之前初始化:协调器构造时就可能调用 clientFactory。
+    private var goEch: GoEchEngine? = null
+
     val networkMonitor = NetworkStateMonitor(context) {
         // 当开启/关闭 VPN 或系统代理时，通知协调器刷新代次以暂停或恢复 DoH 直连
         dohCoordinator.refresh()
@@ -104,15 +109,42 @@ class AppContainer(context: Context) {
         userAgent = userAgent,
         networkMonitor = networkMonitor,
         clientFactory = { dns, transport, coordinator ->
+            // 协调器判定要走 DoH + ECH(开关打开、没有 VPN / 代理)时,linux.do 交给自研内核
+            val ownEch = if (transport != null && sessionStore.isGoEchEnabled()) goEchEngine() else null
             buildSharedHttpClient(
                 store = sessionStore,
                 userAgent = userAgent,
                 dns = dns,
                 dohTransport = transport,
                 failoverCoordinator = coordinator,
+                goEch = ownEch,
+                onGoEchFallback = { request, error ->
+                    diagnostics.logThrottled("go-ech-fallback", "自研 ECH 内核失败，改走原链路: ${request.url.encodedPath} ${error.message}")
+                },
             )
         },
     )
+
+
+    /** 自研内核的诊断 JSON;还没初始化(从没走过 DoH + ECH)时为 null。 */
+    @Synchronized
+    fun goEchStatsOrNull(): String? = goEch?.stats()
+
+    /** 自研 ECH 内核(Go 写的 echnet)。每次重建客户端时同步 DoH 节点列表:当前选中的排第一,其余依次兜底。 */
+    @Synchronized
+    fun goEchEngine(): GoEchEngine? {
+        if (!GoEchEngine.supportedOnThisDevice()) {
+            diagnostics.logThrottled("go-ech-x86", "x86 设备上 arm64 翻译层不支持 Go 用到的指令，自研 ECH 内核停用，使用原内核")
+            return null
+        }
+        val selected = sessionStore.getDohServerUrl() ?: DohPresets.DEFAULT.url
+        val servers = (listOf(selected) + loadDohServers(sessionStore).map { it.url }).distinct()
+        goEch?.let { it.setDohServers(servers); return it }
+        return runCatching { GoEchEngine(servers) }
+            .onFailure { diagnostics.log("自研 ECH 内核初始化失败: ${it.message}") }
+            .getOrNull()
+            ?.also { goEch = it }
+    }
 
     /** 动态分发的全局 Call.Factory：新发起的请求永远自动获取当前最新代次的 Client */
     val dynamicCallFactory: okhttp3.Call.Factory = dohCoordinator
