@@ -39,6 +39,8 @@ android {
         release {
             isMinifyEnabled = false
             signingConfig = releaseSigning
+            // 测试包:./gradlew assembleRelease -PversionSuffix=goech → 版本名显示为 1.5.0-goech,版本号不变,可覆盖安装正式版
+            (project.findProperty("versionSuffix") as String?)?.takeIf { it.isNotBlank() }?.let { versionNameSuffix = "-$it" }
         }
     }
 
