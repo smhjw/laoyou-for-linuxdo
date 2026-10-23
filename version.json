@@ -1,15 +1,15 @@
 {
-  "versionCode": 15,
-  "versionName": "1.5.0",
+  "versionCode": 16,
+  "versionName": "1.6.0",
   "forceUpdate": false,
   "minVersionCode": 1,
-  "title": "佬友 v1.5.0 更新说明",
+  "title": "佬友 v1.6.0 更新说明",
   "changelog": [
-    "1、更名「佬友」，启用全新图标（L + 光标），支持 Android 13 主题图标",
-    "2、全新「清简」界面：去掉悬浮球和所有浮层，发帖进顶栏、排序进标签行，不再遮挡内容",
-    "3、平铺列表 + 发丝分割线，一屏看到更多话题；置顶合成一行、新动态改为列表首行",
-    "4、话题详情底部固定回复栏与阅读进度；我的、分类、设置、草稿同步改版，深色模式全面优化"
+    "1、全新自研开源 ECH 直连内核（Go 实现）：国内不挂梯子也能直连 linux.do，失败时自动退回原内核",
+    "2、设置 → 网络与缓存 新增「自研 ECH 内核（实验）」开关，开发者选项可查看内核运行统计",
+    "3、修复：楼层下已有的回应表情现在可以直接点击跟赞",
+    "4、x86 设备（模拟器、MuMu 等）自动沿用原内核，避免兼容问题"
   ],
-  "apkUrl": "https://github.com/smhjw/laoyou-for-linuxdo/releases/download/v1.5.0/laoyou-1.5.0-release.apk",
-  "apkSha256": "0208b8c5ceaded7949c4b67bdce23793a3826e424659d8a8a9245419dd7a36de"
+  "apkUrl": "https://github.com/smhjw/laoyou-for-linuxdo/releases/download/v1.6.0/laoyou-1.6.0-release.apk",
+  "apkSha256": "d86764453ec02a59214b5910cc94dcb7edb72eb72648ae46cc5b7061e979123a"
 }
