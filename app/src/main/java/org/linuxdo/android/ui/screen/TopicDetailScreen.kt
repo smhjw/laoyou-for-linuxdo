@@ -2234,7 +2234,8 @@ private fun PostActions(
     val canReact = signedIn && !busy && !post.yours && (selected == null || post.currentUserReaction?.canUndo == true)
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        // 已有的回应以小胶囊列出;自己回应过的那一个高亮。
+        // 已有的回应以小胶囊列出;自己回应过的那一个高亮。点一下就是跟着点同一个表情
+        // (再点自己的那个是撤销,点别的是换成那个),规则和下面的点赞按钮一致。
         Row(
             Modifier.weight(1f).horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -2243,11 +2244,16 @@ private fun PostActions(
             post.reactions.filter { it.count > 0 }.forEach { reaction ->
                 val mine = reaction.id == selected
                 Surface(
+                    onClick = { onReact(reaction.id) },
+                    enabled = canReact,
                     shape = CircleShape,
                     color = if (mine) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier.semantics {
+                        contentDescription = if (mine) "撤销回应 ${reaction.id}，${reaction.count} 人" else "跟着回应 ${reaction.id}，${reaction.count} 人"
+                    },
                 ) {
                     Row(
-                        Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         ReactionIcon(reaction.id, emojiUrls, modifier = Modifier.size(16.dp))
